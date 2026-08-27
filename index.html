@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三角線 列車情報アプリ（簡易版）</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">JR三角線 / Prototype</p>
+      <h1>三角線 列車情報</h1>
+    </div>
+    <div class="updated" id="lastUpdated">更新 --:--:--</div>
+  </header>
+
+  <main id="app">
+    <div class="pager" id="pager">
+      <!-- 1. 運行状況 -->
+      <section class="page" data-page="0">
+        <div class="hero">
+          <div class="hero-copy">
+            <span class="status-dot normal"></span>
+            <span id="serviceStatus">平常運転</span>
+          </div>
+          <p id="serviceMessage">現在、三角線は概ね平常どおり運転しています。</p>
+        </div>
+
+        <div class="section-title">
+          <h2>運行中の列車</h2>
+          <span id="trainCount"></span>
+        </div>
+        <div id="trainCards" class="train-cards"></div>
+      </section>
+
+      <!-- 2. 列車位置 -->
+      <section class="page" data-page="1">
+        <div class="section-title">
+          <h2>列車位置</h2>
+          <span>横スクロール</span>
+        </div>
+
+        <div class="route-scroll">
+          <div class="route-stage" id="routeStage">
+            <div class="route-line"></div>
+            <div id="stationLayer"></div>
+            <div id="trainLayer"></div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="legend-train outbound"></i> 三角方面</span>
+          <span><i class="legend-train inbound"></i> 宇土方面</span>
+        </div>
+
+        <div id="selectedTrain" class="detail-card">
+          <p class="muted">列車アイコンを選択すると詳細を表示します。</p>
+        </div>
+      </section>
+
+      <!-- 3. 地図 -->
+      <section class="page" data-page="2">
+        <div class="section-title">
+          <h2>地図</h2>
+          <span>列車位置</span>
+        </div>
+        <div id="map"></div>
+        <p class="note">※ 簡易版では仮の緯度・経度データを使用しています。</p>
+      </section>
+
+      <!-- 4. 時刻表 -->
+      <section class="page" data-page="3">
+        <div class="section-title">
+          <h2>時刻表</h2>
+          <span>簡易表示</span>
+        </div>
+        <div class="timetable-box">
+          <label for="stationSelect">駅を選択</label>
+          <select id="stationSelect"></select>
+          <div class="direction-tabs">
+            <button id="toMisumiBtn" class="direction-btn active">三角方面</button>
+            <button id="toKumamotoBtn" class="direction-btn">熊本方面</button>
+          </div>
+          <div id="timetable"></div>
+        </div>
+        <p class="note">※ 2026年7月時点の公開時刻表をもとにした確認用データです。A列車は運転日に注意してください。</p>
+      </section>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="画面切替">
+    <button class="nav-btn active" data-target="0">運行状況</button>
+    <button class="nav-btn" data-target="1">列車位置</button>
+    <button class="nav-btn" data-target="2">地図</button>
+    <button class="nav-btn" data-target="3">時刻表</button>
+  </nav>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./mock-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
