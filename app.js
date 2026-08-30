@@ -14,13 +14,41 @@ function setPage(index) {
 }
 navButtons.forEach(btn => btn.addEventListener("click", () => setPage(Number(btn.dataset.target))));
 
+// ページ切替スワイプ。
+// 列車位置の横スクロールと地図操作は、外側のページ切替より優先する。
 let touchStartX = null;
-pager.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+let touchStartY = null;
+let pageSwipeBlocked = false;
+
+function isInteractiveHorizontalArea(target) {
+  return Boolean(target.closest(".route-scroll, #map, .leaflet-container, select, button, .train-summary-item"));
+}
+
+pager.addEventListener("touchstart", e => {
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  pageSwipeBlocked = isInteractiveHorizontalArea(e.target);
+}, {passive:true});
+
 pager.addEventListener("touchend", e => {
-  if (touchStartX === null) return;
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 60) setPage(currentPage + (dx < 0 ? 1 : -1));
+  if (touchStartX === null || touchStartY === null) return;
+
+  const touch = e.changedTouches[0];
+  const dx = touch.clientX - touchStartX;
+  const dy = touch.clientY - touchStartY;
+
+  // 誤操作防止：
+  // 1) 子要素の横操作・地図操作中は切り替えない
+  // 2) 90px以上の明確な横スワイプのみ
+  // 3) 横移動が縦移動の1.4倍以上の場合のみ
+  if (!pageSwipeBlocked && Math.abs(dx) >= 90 && Math.abs(dx) >= Math.abs(dy) * 1.4) {
+    setPage(currentPage + (dx < 0 ? 1 : -1));
+  }
+
   touchStartX = null;
+  touchStartY = null;
+  pageSwipeBlocked = false;
 }, {passive:true});
 
 function formatTime(d) {
@@ -77,6 +105,27 @@ function renderRoute(trains) {
   }).join("");
 
   document.querySelectorAll(".train-marker").forEach(el => {
+    el.addEventListener("click", () => showTrainDetail(trains.find(x => x.id === el.dataset.trainId)));
+  });
+
+  // 松永さん案：路線図の下に、現在走っている列車を一覧で補足表示。
+  const summary = document.getElementById("trainSummary");
+  summary.innerHTML = trains.map(t => {
+    const cls = t.direction === "三角方面" ? "outbound" : "inbound";
+    const delayCls = t.delayMinutes > 0 ? "delay" : "normal";
+    return `<button class="train-summary-item ${cls}" type="button" data-train-id="${t.id}">
+      <div class="train-summary-main">
+        <div class="train-summary-title">
+          <strong>${t.id}</strong>
+          <span class="badge">${t.direction}</span>
+        </div>
+        <div class="train-summary-location">${t.currentStation} → ${t.nextStation}</div>
+      </div>
+      <span class="train-summary-status ${delayCls}">${statusText(t)}</span>
+    </button>`;
+  }).join("");
+
+  summary.querySelectorAll(".train-summary-item").forEach(el => {
     el.addEventListener("click", () => showTrainDetail(trains.find(x => x.id === el.dataset.trainId)));
   });
 }
