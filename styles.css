@@ -407,3 +407,161 @@ select{width:100%;padding:12px;border:1px solid #cad9e2;border-radius:12px;backg
 .map-train-icon.to-kumamoto {
   background: #1386d1;
 }
+
+
+/* =========================================================
+   v12: イラスト・写真を「情報の背景」として使う
+   上半分に情報、下半分にモチーフが来る前提のレイアウト
+   ========================================================= */
+
+/* 以前のヒーロー領域は使わない */
+.scenic-hero { display: none !important; }
+
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 66px;
+  justify-content: flex-start;
+  background: rgba(255,255,255,.64);
+  color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,.55);
+  box-shadow: 0 4px 14px rgba(34,62,80,.05);
+}
+
+.brand-mark {
+  border-color: rgba(20,40,59,.65);
+}
+
+.eyebrow { color: #607483; }
+h1 { color: var(--text); }
+
+/* 各ページの背景 */
+.page {
+  position: relative;
+  min-height: 100vh;
+  padding-top: 78px;
+  background-color: #edf6fb;
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 100% auto;
+}
+
+/* 生徒イラスト */
+.page-status {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.10) 58%, rgba(255,255,255,.72) 92%),
+    url("./assets/student-misumi-station.png");
+}
+
+.page-map {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,.08) 58%, rgba(255,255,255,.72) 92%),
+    url("./assets/student-kaishoro.png");
+}
+
+/* 既存画像も同じ「背景」方式へ */
+.page-location {
+  background-image:
+    linear-gradient(180deg, rgba(232,245,252,.42) 0%, rgba(255,255,255,.26) 54%, rgba(255,255,255,.84) 92%),
+    url("./assets/bg-location.jpg");
+  background-size: auto 100vh;
+  background-position: center top;
+}
+
+.page-timetable {
+  background-image:
+    linear-gradient(180deg, rgba(232,245,252,.36) 0%, rgba(255,255,255,.30) 54%, rgba(255,255,255,.86) 92%),
+    url("./assets/bg-timetable.jpg");
+  background-size: auto 100vh;
+  background-position: center top;
+}
+
+.page-content {
+  margin: 0 12px;
+  padding: 8px 0 40px;
+  background: transparent;
+}
+
+/* 情報カードは背景を見せる半透明 */
+.hero,
+.train-card,
+.detail-card,
+.timetable-box,
+.train-summary-item,
+.route-stage,
+.section-title {
+  background: rgba(255,255,255,.84);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  border: 1px solid rgba(255,255,255,.72);
+  box-shadow: 0 8px 22px rgba(41,72,92,.11);
+}
+
+.hero {
+  margin-top: 4px;
+}
+
+.section-title {
+  background: rgba(255,255,255,.78);
+}
+
+.train-service-name {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.train-note {
+  margin-top: 9px;
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.train-service {
+  font-size: 10px;
+  color: #536a79;
+  background: #edf5fa;
+  padding: 3px 7px;
+  border-radius: 999px;
+}
+
+.train-summary-status.arrived {
+  color: #176b4a;
+  background: #e8f7ef;
+}
+
+/* 背景の上半分に情報が来るよう、最初のカードを上へ */
+.page-status .page-content,
+.page-location .page-content,
+.page-map .page-content,
+.page-timetable .page-content {
+  padding-top: 6px;
+}
+
+/* 地図は透明にできないので、背景の雰囲気を残すため少し下げる */
+.page-map #map {
+  margin-top: 6px;
+}
+
+/* PCでもスマホ幅の背景構図を壊さない */
+@media (min-width: 700px) {
+  .page {
+    background-size: 520px auto;
+    background-position: top center;
+  }
+
+  .page-location,
+  .page-timetable {
+    background-size: auto 100vh;
+  }
+
+  .page-content {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

@@ -58,35 +58,28 @@ function formatTime(d) {
 }
 
 function renderStatus(trains) {
-  const latest = trains
-    .map(t => t.acquiredAt)
-    .filter(Boolean)
-    .sort()
-    .at(-1);
-
   document.getElementById("trainCount").textContent = `${trains.length}列車`;
-  document.getElementById("lastUpdated").textContent = latest ? `取得 ${latest.slice(5)}` : "取得 --";
-  document.getElementById("serviceStatus").textContent = "運行データ表示中";
+  document.getElementById("serviceStatus").textContent = "列車運行情報";
   document.getElementById("serviceMessage").textContent =
-    "遅延は正式な時刻表データとの照合後に判定します。";
+    "列車位置と時刻表を照合しながら運行状況を表示します。";
 
   const cards = document.getElementById("trainCards");
   cards.innerHTML = trains.map(t => `
     <article class="train-card">
       <div class="train-card-top">
-        <div class="train-name">${t.id}</div>
+        <div>
+          <div class="train-name">${t.id}</div>
+          ${t.serviceName ? `<div class="train-service-name">${t.serviceName}</div>` : ""}
+        </div>
         <span class="badge">${t.rawDirection}・${t.direction}</span>
       </div>
       <div class="info-grid">
         <div><small>運行状況</small><strong>${statusText(t)}</strong></div>
         <div><small>現在位置</small><strong>${locationText(t)}</strong></div>
-        <div><small>次駅</small><strong>${t.nextStation}</strong></div>
-        <div><small>次駅到着予定</small><strong>${nextStationEta(t)}</strong></div>
+        <div><small>次駅</small><strong>${isTerminalStopped(t) ? "終着" : t.nextStation}</strong></div>
+        <div><small>${nextTimeLabel(t)}</small><strong>${nextTimeValue(t)}</strong></div>
       </div>
-      <div class="source-row">
-        <span>速度 ${speedText(t)}</span>
-        <span>取得 ${t.acquiredAt}</span>
-      </div>
+      ${!isTerminalStopped(t) ? `<div class="train-note">速度 ${speedText(t)}</div>` : ""}
     </article>
   `).join("");
 }
@@ -112,9 +105,8 @@ function renderRoute(trains) {
     const x = start + usableWidth * (displayIndex / (stations.length - 1));
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
     const stopped = isTerminalStopped(t);
-    const markerClass = stopped ? " stopped" : "";
-    return `<div class="train-marker ${cls}${markerClass}" style="left:${x}px">
-      <div class="train-status-label">${stopped ? "停車中" : speedText(t)}</div>
+    return `<div class="train-marker ${cls}${stopped ? " stopped" : ""}" style="left:${x}px">
+      <div class="train-status-label">${stopped ? "三角駅 到着済み" : speedText(t)}</div>
       <div class="train-icon">🚃</div>
       <span>${t.id}</span>
     </div>`;
@@ -123,18 +115,24 @@ function renderRoute(trains) {
   const summary = document.getElementById("trainSummary");
   summary.innerHTML = trains.map(t => {
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
+    const stopped = isTerminalStopped(t);
     return `<article class="train-summary-item ${cls}">
       <div class="train-summary-main">
         <div class="train-summary-title">
           <strong>${t.id}</strong>
-          <span class="badge">${t.rawDirection}・${t.direction}</span>
+          ${t.serviceName ? `<span class="train-service">${t.serviceName}</span>` : ""}
         </div>
         <div class="train-summary-location">${locationText(t)}</div>
-        <div class="train-summary-meta">次駅：${t.nextStation}　速度：${speedText(t)}</div>
+        <div class="train-summary-meta">
+          ${stopped ? "三角駅に到着済み" : `次駅：${t.nextStation}　速度：${speedText(t)}`}
+        </div>
       </div>
       <div class="train-summary-side">
-        <span class="train-summary-status pending">${statusText(t)}</span>
-        <span class="train-summary-eta"><small>到着予定</small><strong>${nextStationEta(t)}</strong></span>
+        <span class="train-summary-status ${stopped ? "arrived" : "pending"}">${statusText(t)}</span>
+        <span class="train-summary-eta">
+          <small>${nextTimeLabel(t)}</small>
+          <strong>${nextTimeValue(t)}</strong>
+        </span>
       </div>
     </article>`;
   }).join("");
@@ -197,7 +195,9 @@ function renderMap(trains) {
       mapMarkers[t.id].setIcon(trainDivIcon(t));
     }
     mapMarkers[t.id].bindPopup(
-      `<strong>${t.id}</strong><br>${t.rawDirection}・${t.direction}<br>${locationText(t)}<br>次駅：${t.nextStation}<br>速度：${speedText(t)}<br>取得：${t.acquiredAt}`
+      `<strong>${t.id}${t.serviceName ? " " + t.serviceName : ""}</strong><br>` +
+      `${locationText(t)}<br>` +
+      `${isTerminalStopped(t) ? "三角駅に到着済み" : `次駅：${t.nextStation}<br>${nextTimeLabel(t)}：${nextTimeValue(t)}`}`
     );
   });
 }

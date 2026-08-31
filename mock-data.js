@@ -24,6 +24,7 @@ let trains = [
   {
     id: "8031D",
     trainNo: "8031D",
+    serviceName: "A列車で行こう 1号",
     sourceCurrentStation: "富合",
     currentStation: "富合",
     nextStation: "宇土",
@@ -38,11 +39,14 @@ let trains = [
     acquiredAt: "2026/01/01 10:28",
     formation: "キハ185-4",
     cabCarNo: "キハ185-4",
+    scheduledNextArrival: "10:31",
+    scheduledNextDeparture: "10:31",
     delayMinutes: null
   },
   {
     id: "527D",
     trainNo: "527D",
+    serviceName: "普通",
     sourceCurrentStation: "三角",
     currentStation: "三角",
     nextStation: "三角",
@@ -57,6 +61,8 @@ let trains = [
     acquiredAt: "2026/01/01 10:28",
     formation: "キハ147-106",
     cabCarNo: "キハ147-106",
+    terminalArrived: true,
+    nextKumamotoDeparture: "11:00",
     delayMinutes: null
   }
 ];
@@ -123,14 +129,31 @@ function speedText(train) {
 }
 
 function statusText(train) {
-  if (train.delayMinutes === null || train.delayMinutes === undefined) return "遅延判定待ち";
+  if (isTerminalStopped(train)) return "到着済み";
+  if (train.delayMinutes === null || train.delayMinutes === undefined) return "時刻表照合待ち";
   return train.delayMinutes > 0 ? `${train.delayMinutes}分遅れ` : "定刻";
 }
 
-// 次駅到着予定は、位置と速度だけではなく正式時刻表＋遅延で出す。
-// 現在は正式時刻表未連携のため、架空の時刻を表示しない。
-function nextStationEta(train) {
-  if (isTerminalStopped(train)) return "終着駅停車中";
+function nextTimeLabel(train) {
+  if (isTerminalStopped(train)) return "次の熊本方面";
+  return "次駅到着予定";
+}
+
+function nextTimeValue(train) {
+  if (isTerminalStopped(train)) {
+    return train.nextKumamotoDeparture ? `${train.nextKumamotoDeparture}発` : "到着済み";
+  }
+
+  if (train.scheduledNextArrival) {
+    const delay = Number(train.delayMinutes || 0);
+    if (delay > 0) {
+      const [hh, mm] = train.scheduledNextArrival.split(":").map(Number);
+      const d = new Date(2000, 0, 1, hh, mm + delay);
+      const value = d.toLocaleTimeString("ja-JP", {hour:"2-digit", minute:"2-digit"});
+      return `${value}頃`;
+    }
+    return `${train.scheduledNextArrival}（所定）`;
+  }
   return "時刻表照合待ち";
 }
 
