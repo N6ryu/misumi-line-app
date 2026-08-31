@@ -160,7 +160,7 @@ main{overflow:hidden}
 .map-train-status{display:inline-block;margin-bottom:3px;padding:3px 6px;border-radius:999px;background:#fff;border:1px solid #d2dde1;box-shadow:0 2px 5px rgba(0,0,0,.12);font-size:9px;font-weight:800;white-space:nowrap}
 .map-train-status.delay{color:#b56d00;background:#fff8e7;border-color:#e8c27b}
 .map-train-icon{width:34px;height:28px;border-radius:8px 8px 5px 5px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 4px 8px rgba(0,0,0,.2);margin:0 auto}
-.map-train-icon.to-misumi{background:#f3a600}.map-train-icon.to-uto{background:#1386d1}
+.map-train-icon.to-misumi{background:#f3a600}.map-train-icon.to-kumamoto{background:#1386d1}
 
 /* 時刻表 */
 .timetable-box label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px}
@@ -337,4 +337,73 @@ select{width:100%;padding:12px;border:1px solid #cad9e2;border-radius:12px;backg
   .scenic-hero {
     height: auto;
   }
+}
+
+
+/* =========================================================
+   v10: 熊本〜三角 13駅対応
+   ========================================================= */
+
+/* 13駅でも駅名が詰まりすぎないよう路線図を横長に */
+.route-stage {
+  width: 1180px;
+}
+
+.route-line {
+  left: 60px;
+  right: 60px;
+}
+
+/* 熊本側4駅を含めても横スクロールしやすく */
+.route-scroll {
+  scroll-padding-inline: 14px;
+}
+
+/* 駅名が長い箇所も読みやすく */
+.station {
+  width: 86px;
+}
+
+.station-name {
+  font-size: 10px;
+}
+
+
+/* v11: JRサンプルデータの状態を明確に表示 */
+.source-row {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #edf1f3;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.train-summary-meta {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.train-summary-status.pending {
+  color: #6a5b14;
+  background: #fff8d7;
+}
+
+.train-marker.stopped .train-icon,
+.map-train-icon.stopped {
+  animation: none !important;
+  opacity: .92;
+}
+
+.train-marker.stopped .train-status-label {
+  color: #425866;
+  background: #f3f7f9;
+}
+
+.map-train-icon.to-kumamoto {
+  background: #1386d1;
 }

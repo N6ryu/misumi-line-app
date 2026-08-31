@@ -1,40 +1,63 @@
-// 三角線アプリ 簡易版モックデータ v2
-// 対象：宇土〜三角 9駅
-// 駅緯度経度は公開Web情報を基に設定。
-// 列車位置はデモ用。実データ連携時は loadTrainData() を差し替える。
+// 三角線アプリ モックデータ v11
+// 対象：熊本〜三角 13駅
+// JR九州から提示されたサンプル2列車を、そのまま元データとして反映。
+// 遅延はこの列車位置データだけでは判定せず、正式な時刻表データとの照合後に算出する。
 
 const stations = [
-  { id: "S01", name: "宇土",     lat: 32.6939373, lng: 130.6689895 },
-  { id: "S02", name: "緑川",     lat: 32.6940800, lng: 130.6312200 },
-  { id: "S03", name: "住吉",     lat: 32.7020569, lng: 130.5978974 },
-  { id: "S04", name: "肥後長浜", lat: 32.6906325, lng: 130.5602429 },
-  { id: "S05", name: "網田",     lat: 32.6676218, lng: 130.5468003 },
-  { id: "S06", name: "赤瀬",     lat: 32.6533333, lng: 130.5100028 },
-  { id: "S07", name: "石打ダム", lat: 32.6425269, lng: 130.5068254 },
-  { id: "S08", name: "波多浦",   lat: 32.6153747, lng: 130.4879955 },
-  { id: "S09", name: "三角",     lat: 32.6077500, lng: 130.4696800 }
+  { id: "S01", name: "熊本",     lat: 32.7898759, lng: 130.6886784 },
+  { id: "S02", name: "西熊本",   lat: 32.7622048, lng: 130.6830044 },
+  { id: "S03", name: "川尻",     lat: 32.7432967, lng: 130.6797000 },
+  { id: "S04", name: "富合",     lat: 32.7137924, lng: 130.6728748 },
+  { id: "S05", name: "宇土",     lat: 32.6939373, lng: 130.6689895 },
+  { id: "S06", name: "緑川",     lat: 32.6940800, lng: 130.6312200 },
+  { id: "S07", name: "住吉",     lat: 32.7020569, lng: 130.5978974 },
+  { id: "S08", name: "肥後長浜", lat: 32.6906325, lng: 130.5602429 },
+  { id: "S09", name: "網田",     lat: 32.6676218, lng: 130.5468003 },
+  { id: "S10", name: "赤瀬",     lat: 32.6533333, lng: 130.5100028 },
+  { id: "S11", name: "石打ダム", lat: 32.6425269, lng: 130.5068254 },
+  { id: "S12", name: "波多浦",   lat: 32.6153747, lng: 130.4879955 },
+  { id: "S13", name: "三角",     lat: 32.6077500, lng: 130.4696800 }
 ];
 
+// JR九州から提示されたサンプルデータ（2026/01/01）
 let trains = [
   {
-    id: "T101",
-    destination: "三角",
+    id: "8031D",
+    trainNo: "8031D",
+    sourceCurrentStation: "富合",
+    currentStation: "富合",
+    nextStation: "宇土",
+    nextStop: "宇土",
+    rawDirection: "下り",
     direction: "三角方面",
-    updatedAt: new Date(),
-    cabCarNo: "仮-01",
-    positionIndex: 2.35,
-    delayMinutes: 0,
-    speedKmh: 45
+    lat: 32.71283416,
+    lng: 130.6727855,
+    rawSpeed: 75,
+    speedKmh: 75,
+    beaconAt: "2026/01/01 10:28",
+    acquiredAt: "2026/01/01 10:28",
+    formation: "キハ185-4",
+    cabCarNo: "キハ185-4",
+    delayMinutes: null
   },
   {
-    id: "T202",
-    destination: "宇土",
-    direction: "宇土方面",
-    updatedAt: new Date(),
-    cabCarNo: "仮-02",
-    positionIndex: 6.15,
-    delayMinutes: 5,
-    speedKmh: 40
+    id: "527D",
+    trainNo: "527D",
+    sourceCurrentStation: "三角",
+    currentStation: "三角",
+    nextStation: "三角",
+    nextStop: "三角",
+    rawDirection: "下り",
+    direction: "三角方面",
+    lat: 32.60767861,
+    lng: 130.4699545,
+    rawSpeed: -3.6,
+    speedKmh: 0,
+    beaconAt: "2026/01/01 10:02",
+    acquiredAt: "2026/01/01 10:28",
+    formation: "キハ147-106",
+    cabCarNo: "キハ147-106",
+    delayMinutes: null
   }
 ];
 
@@ -45,93 +68,87 @@ function haversineMeters(a, b) {
   const dLng = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
-
   const h =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function applyPositionToTrain(train) {
-  const maxIndex = stations.length - 1;
-  const pos = Math.max(0, Math.min(maxIndex, train.positionIndex));
-
-  let i = Math.floor(pos);
-  let frac = pos - i;
-
-  // 終点ちょうどの場合
-  if (i >= maxIndex) {
-    i = maxIndex - 1;
-    frac = 1;
-  }
-
-  const a = stations[i];
-  const b = stations[i + 1];
-
-  train.lat = a.lat + (b.lat - a.lat) * frac;
-  train.lng = a.lng + (b.lng - a.lng) * frac;
-
-  if (train.direction === "三角方面") {
-    train.currentStation = frac < 0.5 ? a.name : `${a.name}～${b.name}`;
-    train.nextStation = b.name;
-  } else {
-    train.currentStation = frac > 0.5 ? b.name : `${b.name}～${a.name}`;
-    train.nextStation = a.name;
-  }
-
-  return train;
+function stationIndex(name) {
+  return stations.findIndex(s => s.name === name);
 }
 
-trains = trains.map(applyPositionToTrain);
+// 列車の緯度経度を、currentStation→nextStation の線分上へ投影して
+// 路線図上の位置（0=熊本, 12=三角）を求める。
+function routePositionIndex(train) {
+  const currentIndex = stationIndex(train.sourceCurrentStation || train.currentStation);
+  const nextIndex = stationIndex(train.nextStation);
+
+  if (currentIndex < 0) return 0;
+  if (nextIndex < 0 || currentIndex === nextIndex) return currentIndex;
+
+  const a = stations[currentIndex];
+  const b = stations[nextIndex];
+
+  // 緯度経度を局所平面として扱う簡易投影。短い駅間なので十分。
+  const cosLat = Math.cos(((a.lat + b.lat) / 2) * Math.PI / 180);
+  const ax = a.lng * cosLat, ay = a.lat;
+  const bx = b.lng * cosLat, by = b.lat;
+  const px = train.lng * cosLat, py = train.lat;
+
+  const abx = bx - ax, aby = by - ay;
+  const apx = px - ax, apy = py - ay;
+  const denom = abx * abx + aby * aby;
+  const t = denom > 0 ? Math.max(0, Math.min(1, (apx * abx + apy * aby) / denom)) : 0;
+
+  return currentIndex + (nextIndex - currentIndex) * t;
+}
+
+function isTerminalStopped(train) {
+  if (train.currentStation !== train.nextStation || train.currentStation !== train.nextStop) return false;
+  const station = stations.find(s => s.name === train.currentStation);
+  if (!station) return false;
+  return haversineMeters({lat: train.lat, lng: train.lng}, station) < 250;
+}
+
+function locationText(train) {
+  if (isTerminalStopped(train)) return `${train.currentStation}駅 停車中`;
+  if (train.currentStation !== train.nextStation) return `${train.currentStation}～${train.nextStation}間`;
+  return `${train.currentStation}駅付近`;
+}
+
+function speedText(train) {
+  if (isTerminalStopped(train)) return "停車中";
+  return Number.isFinite(train.speedKmh) ? `${train.speedKmh} km/h` : "--";
+}
+
+function statusText(train) {
+  if (train.delayMinutes === null || train.delayMinutes === undefined) return "遅延判定待ち";
+  return train.delayMinutes > 0 ? `${train.delayMinutes}分遅れ` : "定刻";
+}
+
+// 次駅到着予定は、位置と速度だけではなく正式時刻表＋遅延で出す。
+// 現在は正式時刻表未連携のため、架空の時刻を表示しない。
+function nextStationEta(train) {
+  if (isTerminalStopped(train)) return "終着駅停車中";
+  return "時刻表照合待ち";
+}
+
+trains = trains.map(t => ({
+  ...t,
+  positionIndex: routePositionIndex(t)
+}));
 
 async function loadTrainData() {
   return trains;
 }
 
-function statusText(train) {
-  return train.delayMinutes > 0 ? `${train.delayMinutes}分遅れ` : "平常運転";
-}
-
-// 3秒ごとに、設定した実速度(km/h)相当だけ進める。
-// 例：45km/hなら3秒で約37.5m。
-// positionIndexの増分を固定値にせず、各駅間の実距離から算出する。
+// v11ではJRサンプルのスナップショット位置を保持するため、位置自体は動かさない。
+// 列車アイコンの「走行感」はCSSアニメーションで表現する。
 function simulateTrainMovement() {
-  const tickSeconds = 3;
-
-  trains = trains.map(train => {
-    let pos = train.positionIndex;
-    const maxIndex = stations.length - 1;
-
-    let i = Math.floor(pos);
-    let frac = pos - i;
-
-    if (i >= maxIndex) {
-      i = maxIndex - 1;
-      frac = 1;
-    }
-
-    const a = stations[i];
-    const b = stations[i + 1];
-    const segmentMeters = Math.max(1, haversineMeters(a, b));
-    const travelMeters = (train.speedKmh * 1000 / 3600) * tickSeconds;
-    const deltaIndex = travelMeters / segmentMeters;
-
-    pos += train.direction === "三角方面" ? deltaIndex : -deltaIndex;
-
-    // デモ用：端まで行ったら反対端へ戻す
-    if (pos >= maxIndex) pos = 0.05;
-    if (pos <= 0) pos = maxIndex - 0.05;
-
-    train.positionIndex = pos;
-    train.updatedAt = new Date();
-
-    return applyPositionToTrain(train);
-  });
+  return;
 }
 
-// 2026年7月21日時点の公開時刻表をベースにした簡易データ。
-// 「A列車で行こう」は運転日に注意。
 const timetableData = {
   "宇土": {
     toMisumi: [

@@ -57,40 +57,35 @@ function formatTime(d) {
   return date.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
 }
 
-// 次駅までの到着予定時刻（プロトタイプ用推定）。
-// 現在位置と次駅の緯度経度、現在のデモ速度から概算する。
-// 実運用時はJR九州から提供される時刻・運行データを優先する。
-function nextStationEta(train) {
-  const next = stations.find(s => s.name === train.nextStation);
-  if (!next || !Number.isFinite(train.lat) || !Number.isFinite(train.lng)) return "--:--";
-
-  const speed = Number(train.speedKmh);
-  if (!Number.isFinite(speed) || speed <= 1) return "停車中";
-
-  const meters = haversineMeters(
-    { lat: train.lat, lng: train.lng },
-    { lat: next.lat, lng: next.lng }
-  );
-  const minutes = Math.max(1, Math.ceil((meters / 1000) / speed * 60));
-  const eta = new Date(Date.now() + minutes * 60 * 1000);
-  return eta.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" }) + "頃";
-}
-
 function renderStatus(trains) {
+  const latest = trains
+    .map(t => t.acquiredAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
+
   document.getElementById("trainCount").textContent = `${trains.length}列車`;
-  document.getElementById("lastUpdated").textContent = `更新 ${formatTime(new Date())}`;
+  document.getElementById("lastUpdated").textContent = latest ? `取得 ${latest.slice(5)}` : "取得 --";
+  document.getElementById("serviceStatus").textContent = "運行データ表示中";
+  document.getElementById("serviceMessage").textContent =
+    "遅延は正式な時刻表データとの照合後に判定します。";
+
   const cards = document.getElementById("trainCards");
   cards.innerHTML = trains.map(t => `
     <article class="train-card">
       <div class="train-card-top">
         <div class="train-name">${t.id}</div>
-        <span class="badge">${t.direction}</span>
+        <span class="badge">${t.rawDirection}・${t.direction}</span>
       </div>
       <div class="info-grid">
         <div><small>運行状況</small><strong>${statusText(t)}</strong></div>
-        <div><small>現在駅</small><strong>${t.currentStation}</strong></div>
+        <div><small>現在位置</small><strong>${locationText(t)}</strong></div>
         <div><small>次駅</small><strong>${t.nextStation}</strong></div>
         <div><small>次駅到着予定</small><strong>${nextStationEta(t)}</strong></div>
+      </div>
+      <div class="source-row">
+        <span>速度 ${speedText(t)}</span>
+        <span>取得 ${t.acquiredAt}</span>
       </div>
     </article>
   `).join("");
@@ -100,10 +95,10 @@ function renderRoute(trains) {
   const stationLayer = document.getElementById("stationLayer");
   const trainLayer = document.getElementById("trainLayer");
 
-  // 左：三角、右：宇土
+  // 左：三角、右：熊本
   const displayStations = [...stations].reverse();
-  const start = 55;
-  const usableWidth = 750;
+  const start = 60;
+  const usableWidth = 1060;
 
   stationLayer.innerHTML = displayStations.map((s, i) => {
     const x = start + usableWidth * (i / (displayStations.length - 1));
@@ -116,29 +111,29 @@ function renderRoute(trains) {
     const displayIndex = (stations.length - 1) - t.positionIndex;
     const x = start + usableWidth * (displayIndex / (stations.length - 1));
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
-    const delayCls = t.delayMinutes > 0 ? "delay" : "";
-    return `<div class="train-marker ${cls}" style="left:${x}px" data-train-id="${t.id}">
-      <div class="train-status-label ${delayCls}">${statusText(t)}</div>
+    const stopped = isTerminalStopped(t);
+    const markerClass = stopped ? " stopped" : "";
+    return `<div class="train-marker ${cls}${markerClass}" style="left:${x}px">
+      <div class="train-status-label">${stopped ? "停車中" : speedText(t)}</div>
       <div class="train-icon">🚃</div>
       <span>${t.id}</span>
     </div>`;
   }).join("");
 
-  // 松永さん案：路線図の下に、現在走っている列車を一覧で補足表示。
   const summary = document.getElementById("trainSummary");
   summary.innerHTML = trains.map(t => {
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
-    const delayCls = t.delayMinutes > 0 ? "delay" : "normal";
     return `<article class="train-summary-item ${cls}">
       <div class="train-summary-main">
         <div class="train-summary-title">
           <strong>${t.id}</strong>
-          <span class="badge">${t.direction}</span>
+          <span class="badge">${t.rawDirection}・${t.direction}</span>
         </div>
-        <div class="train-summary-location">${t.currentStation} → ${t.nextStation}</div>
+        <div class="train-summary-location">${locationText(t)}</div>
+        <div class="train-summary-meta">次駅：${t.nextStation}　速度：${speedText(t)}</div>
       </div>
       <div class="train-summary-side">
-        <span class="train-summary-status ${delayCls}">${statusText(t)}</span>
+        <span class="train-summary-status pending">${statusText(t)}</span>
         <span class="train-summary-eta"><small>到着予定</small><strong>${nextStationEta(t)}</strong></span>
       </div>
     </article>`;
@@ -167,7 +162,7 @@ function initMap() {
 }
 
 function trainDivIcon(t) {
-  const dirClass = t.direction === "三角方面" ? "to-misumi" : "to-uto";
+  const dirClass = t.direction === "三角方面" ? "to-misumi" : "to-kumamoto";
   const delayCls = t.delayMinutes > 0 ? "delay" : "";
 
   // Leaflet側の iconAnchor のみで位置決めし、
@@ -179,8 +174,8 @@ function trainDivIcon(t) {
     iconAnchor: [46, 50],
     popupAnchor: [0, -48],
     html: `<div class="map-train-wrap">
-      <div class="map-train-status ${delayCls}">${statusText(t)}</div>
-      <div class="map-train-icon ${dirClass}">🚃</div>
+      <div class="map-train-status ${delayCls}">${isTerminalStopped(t) ? "停車中" : speedText(t)}</div>
+      <div class="map-train-icon ${dirClass}${isTerminalStopped(t) ? " stopped" : ""}">🚃</div>
     </div>`
   });
 }
@@ -202,7 +197,7 @@ function renderMap(trains) {
       mapMarkers[t.id].setIcon(trainDivIcon(t));
     }
     mapMarkers[t.id].bindPopup(
-      `<strong>${t.id}</strong><br>${t.direction}<br>${statusText(t)}<br>終着：${t.destination}<br>更新：${formatTime(t.updatedAt)}`
+      `<strong>${t.id}</strong><br>${t.rawDirection}・${t.direction}<br>${locationText(t)}<br>次駅：${t.nextStation}<br>速度：${speedText(t)}<br>取得：${t.acquiredAt}`
     );
   });
 }
@@ -258,8 +253,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   initMap();
   initTimetable();
   await refresh();
-  setInterval(async () => {
-    simulateTrainMovement();
-    await refresh();
-  }, 3000);
 });
