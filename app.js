@@ -57,6 +57,25 @@ function formatTime(d) {
   return date.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
 }
 
+// 次駅までの到着予定時刻（プロトタイプ用推定）。
+// 現在位置と次駅の緯度経度、現在のデモ速度から概算する。
+// 実運用時はJR九州から提供される時刻・運行データを優先する。
+function nextStationEta(train) {
+  const next = stations.find(s => s.name === train.nextStation);
+  if (!next || !Number.isFinite(train.lat) || !Number.isFinite(train.lng)) return "--:--";
+
+  const speed = Number(train.speedKmh);
+  if (!Number.isFinite(speed) || speed <= 1) return "停車中";
+
+  const meters = haversineMeters(
+    { lat: train.lat, lng: train.lng },
+    { lat: next.lat, lng: next.lng }
+  );
+  const minutes = Math.max(1, Math.ceil((meters / 1000) / speed * 60));
+  const eta = new Date(Date.now() + minutes * 60 * 1000);
+  return eta.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" }) + "頃";
+}
+
 function renderStatus(trains) {
   document.getElementById("trainCount").textContent = `${trains.length}列車`;
   document.getElementById("lastUpdated").textContent = `更新 ${formatTime(new Date())}`;
@@ -71,7 +90,7 @@ function renderStatus(trains) {
         <div><small>運行状況</small><strong>${statusText(t)}</strong></div>
         <div><small>現在駅</small><strong>${t.currentStation}</strong></div>
         <div><small>次駅</small><strong>${t.nextStation}</strong></div>
-        <div><small>終着駅</small><strong>${t.destination}</strong></div>
+        <div><small>次駅到着予定</small><strong>${nextStationEta(t)}</strong></div>
       </div>
     </article>
   `).join("");
@@ -105,16 +124,12 @@ function renderRoute(trains) {
     </div>`;
   }).join("");
 
-  document.querySelectorAll(".train-marker").forEach(el => {
-    el.addEventListener("click", () => showTrainDetail(trains.find(x => x.id === el.dataset.trainId)));
-  });
-
   // 松永さん案：路線図の下に、現在走っている列車を一覧で補足表示。
   const summary = document.getElementById("trainSummary");
   summary.innerHTML = trains.map(t => {
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
     const delayCls = t.delayMinutes > 0 ? "delay" : "normal";
-    return `<button class="train-summary-item ${cls}" type="button" data-train-id="${t.id}">
+    return `<article class="train-summary-item ${cls}">
       <div class="train-summary-main">
         <div class="train-summary-title">
           <strong>${t.id}</strong>
@@ -122,28 +137,12 @@ function renderRoute(trains) {
         </div>
         <div class="train-summary-location">${t.currentStation} → ${t.nextStation}</div>
       </div>
-      <span class="train-summary-status ${delayCls}">${statusText(t)}</span>
-    </button>`;
+      <div class="train-summary-side">
+        <span class="train-summary-status ${delayCls}">${statusText(t)}</span>
+        <span class="train-summary-eta"><small>到着予定</small><strong>${nextStationEta(t)}</strong></span>
+      </div>
+    </article>`;
   }).join("");
-
-  summary.querySelectorAll(".train-summary-item").forEach(el => {
-    el.addEventListener("click", () => showTrainDetail(trains.find(x => x.id === el.dataset.trainId)));
-  });
-}
-
-function showTrainDetail(t) {
-  document.getElementById("selectedTrain").innerHTML = `
-    <h3>${t.id} <span class="badge">${t.direction}</span></h3>
-    <div class="info-grid">
-      <div><small>運行状況</small><strong>${statusText(t)}</strong></div>
-      <div><small>現在駅</small><strong>${t.currentStation}</strong></div>
-      <div><small>次駅</small><strong>${t.nextStation}</strong></div>
-      <div><small>終着駅</small><strong>${t.destination}</strong></div>
-      <div><small>緯度</small><strong>${t.lat.toFixed(5)}</strong></div>
-      <div><small>経度</small><strong>${t.lng.toFixed(5)}</strong></div>
-    </div>
-    <p class="muted">取得時間 ${formatTime(t.updatedAt)}</p>
-  `;
 }
 
 function initMap() {

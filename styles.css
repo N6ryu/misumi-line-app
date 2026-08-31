@@ -228,3 +228,113 @@ select{width:100%;padding:12px;border:1px solid #cad9e2;border-radius:12px;backg
 @media (prefers-reduced-motion:reduce){
   .pager{transition:none}.train-icon,.map-train-icon{animation:none}
 }
+
+
+/* v8: 到着予定時刻を常時表示し、詳細タップUIを廃止 */
+.train-marker { cursor: default; }
+
+.train-summary-item {
+  cursor: default;
+}
+
+.train-summary-side {
+  flex: none;
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.train-summary-eta {
+  display: grid;
+  justify-items: end;
+  line-height: 1.05;
+}
+
+.train-summary-eta small {
+  font-size: 9px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.train-summary-eta strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+
+/* =========================================================
+   v9: 沿線ビジュアルをスマホ向け縦長（9:16）表示へ
+   ========================================================= */
+
+/* スマホでは各メニューの写真を「縦長の1枚絵」として見せる */
+.scenic-hero {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  min-height: 0;
+  max-height: none;
+  background-size: cover;
+}
+
+/* 横長の元画像を縦長で見せるため、主役が残るよう焦点を個別調整 */
+.scenic-status {
+  background-position: 50% 46%;
+}
+
+.scenic-location {
+  background-position: 50% 45%;
+}
+
+.scenic-map {
+  background-position: 46% 50%;
+}
+
+.scenic-timetable {
+  background-position: 58% 48%;
+}
+
+/* 写真上のタイトルは縦長画面でも下側に配置 */
+.scenic-title {
+  left: 18px;
+  bottom: 46px;
+}
+
+/* 情報カードは写真下端に少し重なる */
+.page-content {
+  margin-top: -34px;
+}
+
+/* 小型スマホでも9:16を維持 */
+@media (max-width: 520px) {
+  .scenic-hero {
+    aspect-ratio: 9 / 16;
+    height: auto;
+  }
+
+  .page-content {
+    margin-top: -32px;
+  }
+}
+
+/* タブレット・PCでは縦長になりすぎないよう幅を抑えて中央表示 */
+@media (min-width: 700px) {
+  .scenic-hero {
+    width: min(100%, 520px);
+    aspect-ratio: 9 / 16;
+    margin: 0 auto;
+    border-radius: 0 0 26px 26px;
+  }
+
+  .page-content {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: -34px;
+  }
+}
+
+@media (min-width: 850px) {
+  .scenic-hero {
+    height: auto;
+  }
+}
