@@ -565,3 +565,200 @@ h1 { color: var(--text); }
     margin-right: auto;
   }
 }
+
+
+/* =========================================================
+   v14: スマホの1画面内に収まるアプリシェル
+   body全体を縦に伸ばさず、各ページだけを必要に応じて内部スクロール。
+   ========================================================= */
+
+html, body {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body {
+  padding-bottom: 0;
+}
+
+/* ブラウザの表示領域そのものをアプリの高さにする */
+main#app {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.pager {
+  height: 100%;
+  min-height: 0;
+  align-items: stretch;
+}
+
+/* 各タブは「スマホ1画面分」。内容が多い時だけそのページ内をスクロール */
+.page {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+
+  /* 固定ヘッダーと固定下部メニューのぶんをページ内で確保 */
+  padding-top: 78px;
+  padding-bottom: calc(var(--nav-h) + 18px + env(safe-area-inset-bottom));
+}
+
+/* 背景はページの表示領域いっぱいまで続ける。
+   「背景画像が途中で終わって、その下が白く伸びる」状態を防ぐ。 */
+.page-status,
+.page-map {
+  background-size: auto 100%;
+  background-position: center top;
+}
+
+.page-location,
+.page-timetable {
+  background-size: cover;
+  background-position: center top;
+}
+
+/* 情報が少ない画面でも不要な余白を付け足さない */
+.page-content {
+  min-height: 0;
+  padding-bottom: 12px;
+}
+
+/* 下部ナビは画面最下部に固定 */
+.bottom-nav {
+  bottom: 0;
+}
+
+/* PCではスマホ表示の確認がしやすいよう、アプリ領域の高さを画面内に固定 */
+@media (min-width: 850px) {
+  body {
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  main#app,
+  .pager,
+  .page {
+    height: 100vh;
+  }
+}
+
+
+/* =========================================================
+   v15: JR九州ロゴ・路線図間隔・時刻表画面の最終調整
+   ========================================================= */
+
+/* 左上：提供いただいたJR九州ロゴを使用。
+   元画像の余白はCSSのクリップ領域で吸収する。 */
+.brand {
+  gap: 8px;
+}
+
+.jr-logo-crop {
+  position: relative;
+  display: block;
+  width: 62px;
+  height: 31px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.jr-logo-crop img {
+  position: absolute;
+  width: 148px;
+  height: auto;
+  max-width: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 旧JR文字アイコンは使用しない */
+.brand-mark {
+  display: none;
+}
+
+/* 列車位置：駅間を従来のおよそ3分の2へ */
+.route-stage {
+  width: 827px;
+}
+
+.route-line {
+  left: 60px;
+  right: 60px;
+}
+
+.station {
+  width: 70px;
+}
+
+.station-name {
+  font-size: 9px;
+}
+
+/* 時刻表ページは、ページ全体を下へ伸ばさない。
+   駅選択・方面ボタンは固定的に見せ、時刻一覧だけを内部スクロールする。 */
+.page-timetable {
+  overflow-y: hidden;
+}
+
+.page-timetable .page-content {
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-timetable .section-title {
+  flex: 0 0 auto;
+}
+
+.page-timetable .timetable-box {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-timetable .timetable-box label,
+.page-timetable .timetable-box select,
+.page-timetable .direction-tabs {
+  flex: 0 0 auto;
+}
+
+#timetable {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-right: 2px;
+}
+
+.page-timetable > .page-content > .note {
+  flex: 0 0 auto;
+  margin: 6px 2px 0;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+/* 小型スマホではヘッダー内ロゴを少し縮小 */
+@media (max-width: 390px) {
+  .jr-logo-crop {
+    width: 54px;
+    height: 27px;
+  }
+
+  .jr-logo-crop img {
+    width: 132px;
+  }
+}

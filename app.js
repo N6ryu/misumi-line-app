@@ -91,7 +91,7 @@ function renderRoute(trains) {
   // 左：三角、右：熊本
   const displayStations = [...stations].reverse();
   const start = 60;
-  const usableWidth = 1060;
+  const usableWidth = 707;
 
   stationLayer.innerHTML = displayStations.map((s, i) => {
     const x = start + usableWidth * (i / (displayStations.length - 1));
@@ -204,7 +204,7 @@ function renderMap(trains) {
 
 function initTimetable() {
   const select = document.getElementById("stationSelect");
-  select.innerHTML = stations.map(s => `<option>${s.name}</option>`).join("");
+  select.innerHTML = stations.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
   select.addEventListener("change", renderTimetable);
 
   document.getElementById("toMisumiBtn").addEventListener("click", () => {
@@ -218,6 +218,7 @@ function initTimetable() {
     renderTimetable();
   });
 
+  syncDirectionButtons();
   renderTimetable();
 }
 
@@ -228,11 +229,16 @@ function syncDirectionButtons() {
 
 function renderTimetable() {
   const station = document.getElementById("stationSelect").value || stations[0].name;
-  const rows = (timetableData[station] && timetableData[station][currentTimetableDirection]) || [];
+  const stationData = timetableData?.[station];
+  const rows = stationData?.[currentTimetableDirection] || [];
   const label = currentTimetableDirection === "toMisumi" ? "三角方面" : "熊本方面";
 
   if (!rows.length) {
-    document.getElementById("timetable").innerHTML = `<p class="muted">${station}駅から${label}の列車はありません。</p>`;
+    const message =
+      station === "熊本" && currentTimetableDirection === "toKumamoto"
+        ? "熊本駅は、このアプリで扱う熊本方面列車の終点です。"
+        : `${station}駅から${label}の列車はありません。`;
+    document.getElementById("timetable").innerHTML = `<p class="muted">${message}</p>`;
     return;
   }
   document.getElementById("timetable").innerHTML =
