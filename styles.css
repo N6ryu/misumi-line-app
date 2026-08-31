@@ -1,414 +1,230 @@
 * { box-sizing: border-box; }
 :root {
-  --bg: #f5f7f8;
-  --card: #ffffff;
-  --text: #1e2930;
-  --muted: #6c7a80;
-  --line: #cfd8dc;
-  --accent: #0e6b55;
-  --accent2: #1f7aa8;
-  --warn: #c98900;
-  --danger: #b63737;
-  --shadow: 0 8px 24px rgba(0,0,0,.08);
+  --bg:#eef5fb;
+  --card:rgba(255,255,255,.96);
+  --text:#14283b;
+  --muted:#6d7d8c;
+  --blue:#087af2;
+  --blue2:#0d63d8;
+  --green:#26a861;
+  --teal:#008e95;
+  --warn:#ffb000;
+  --danger:#e34335;
+  --shadow:0 10px 30px rgba(20,57,88,.13);
+  --nav-h:76px;
 }
-html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif; }
-body { min-height: 100vh; padding-bottom: 74px; }
-.app-header {
-  position: sticky; top: 0; z-index: 50;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px;
-  background: rgba(255,255,255,.96);
-  border-bottom: 1px solid #e5ecef;
-  backdrop-filter: blur(10px);
+html,body{
+  margin:0;padding:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;
 }
-.eyebrow { margin: 0; font-size: 11px; letter-spacing: .08em; color: var(--muted); }
-h1 { margin: 2px 0 0; font-size: 20px; }
-.updated { font-size: 12px; color: var(--muted); }
-main { overflow: hidden; }
-.pager { display: flex; width: 400%; transition: transform .28s ease; }
-.page { width: 25%; min-height: calc(100vh - 138px); padding: 18px; overflow-y: auto; }
-.hero {
-  padding: 22px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #e8f5f0, #f9fcfb);
-  box-shadow: var(--shadow);
+body{min-height:100vh;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));overflow-x:hidden;}
+button,select{font:inherit}
+button{touch-action:manipulation}
+
+.app-header{
+  position:fixed;top:0;left:0;right:0;z-index:80;
+  height:68px;padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  color:white;
+  background:linear-gradient(180deg,rgba(4,77,151,.74),rgba(4,77,151,.18));
+  border-bottom:1px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
 }
-.hero-copy { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; }
-.hero p { margin: 10px 0 0; color: var(--muted); line-height: 1.7; }
-.status-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
-.status-dot.normal { background: #2f9d6a; }
-.status-dot.delay { background: var(--warn); }
-.status-dot.stop { background: var(--danger); }
-
-.section-title { margin: 22px 2px 10px; display: flex; justify-content: space-between; align-items: end; }
-.section-title h2 { margin: 0; font-size: 18px; }
-.section-title span { font-size: 12px; color: var(--muted); }
-.train-cards { display: grid; gap: 12px; }
-.train-card, .detail-card, .timetable-box {
-  background: var(--card);
-  border: 1px solid #e1e7ea;
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 16px;
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-mark{
+  display:grid;place-items:center;width:34px;height:34px;border-radius:10px;
+  border:2px solid rgba(255,255,255,.9);font-weight:800;font-size:13px;flex:none;
 }
-.train-card-top { display: flex; justify-content: space-between; gap: 10px; }
-.train-name { font-weight: 700; }
-.badge { padding: 4px 8px; border-radius: 999px; font-size: 11px; background: #eef4f6; color: #465960; white-space: nowrap; }
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-.info-grid div { background: #f7fafb; padding: 10px; border-radius: 10px; }
-.info-grid small { display: block; color: var(--muted); margin-bottom: 3px; }
+.eyebrow{margin:0;font-size:9px;letter-spacing:.12em;opacity:.85}
+h1{margin:2px 0 0;font-size:16px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.updated{font-size:10px;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.25)}
 
-.route-scroll { overflow-x: auto; padding: 8px 0 16px; }
-.route-stage { position: relative; width: 1120px; height: 250px; background: linear-gradient(#f9fcfd, #edf5f7); border-radius: 18px; border: 1px solid #dbe5e8; }
-.route-line { position: absolute; left: 72px; right: 72px; top: 132px; height: 6px; border-radius: 4px; background: #7295a2; }
-.station { position: absolute; top: 104px; transform: translateX(-50%); text-align: center; width: 100px; }
-.station::before { content:""; display:block; width:16px; height:16px; margin:20px auto 6px; background:white; border:4px solid #4d7280; border-radius:50%; }
-.station-name { font-size: 12px; font-weight: 650; white-space: nowrap; }
-.train-marker { position: absolute; top: 68px; transform: translateX(-50%); cursor: pointer; text-align:center; transition:left .8s ease; }
-.train-icon { display:flex; align-items:center; justify-content:center; width:48px; height:36px; border-radius:10px 10px 6px 6px; color:white; font-size:20px; box-shadow:0 5px 12px rgba(0,0,0,.18); }
-.train-marker.outbound .train-icon { background:#1978a8; }
-.train-marker.inbound .train-icon { background:#0f7b5c; }
-.train-marker span { display:block; margin-top:4px; font-size:11px; font-weight:700; }
-.legend { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-bottom:12px; }
-.legend-train { display:inline-block; width:18px; height:10px; border-radius:4px; margin-right:5px; }
-.legend-train.outbound { background:#1978a8; }
-.legend-train.inbound { background:#0f7b5c; }
-.detail-card h3 { margin:0 0 10px; }
-.muted, .note { color:var(--muted); font-size:12px; line-height:1.6; }
-
-#map { height: 55vh; min-height: 360px; border-radius: 18px; overflow:hidden; box-shadow: var(--shadow); border:1px solid #dbe5e8; background:#eef3f5; }
-
-.timetable-box label { display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
-select { width:100%; padding:12px; border:1px solid #ccd7db; border-radius:10px; font-size:15px; background:#fff; }
-.time-row { display:flex; justify-content:space-between; padding:12px 2px; border-bottom:1px solid #edf1f3; }
-.time-row:last-child { border-bottom:none; }
-
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
-  display:grid; grid-template-columns: repeat(4,1fr);
-  background:rgba(255,255,255,.98); border-top:1px solid #dfe7ea; padding:7px 6px env(safe-area-inset-bottom);
-}
-.nav-btn { border:0; background:transparent; padding:10px 4px; font-size:12px; color:#708087; border-radius:10px; }
-.nav-btn.active { color:var(--accent); background:#eaf5f1; font-weight:700; }
-
-@media (min-width: 850px) {
-  body { max-width: 980px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,.06); }
-  .bottom-nav { max-width: 980px; margin: 0 auto; }
-  .train-cards { grid-template-columns: 1fr 1fr; }
+main{overflow:hidden}
+.pager{display:flex;width:400%;transition:transform .30s cubic-bezier(.2,.75,.25,1)}
+.page{
+  width:25%;min-width:25%;min-height:100vh;padding:0 0 24px;overflow-y:auto;
+  background:linear-gradient(#eaf4fb,#f7fbfe);
 }
 
-/* v2 enhancements */
-.route-stage { width: 860px; height: 250px; }
-.train-marker { top: 54px; }
-.train-status-label {
-  display: inline-block;
-  margin-bottom: 5px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  background: #ffffff;
-  border: 1px solid #d6e0e4;
-  box-shadow: 0 2px 6px rgba(0,0,0,.10);
-  white-space: nowrap;
+/* 写真は「背景」ではなく、画面上部の景色としてしっかり見せる */
+.scenic-hero{
+  position:relative;height:clamp(245px,38vh,340px);
+  background-size:cover;background-repeat:no-repeat;
+  overflow:hidden;
 }
-.train-status-label.delay { color: #b56d00; border-color: #e8c27b; background: #fff8e7; }
-.map-train-wrap { width:92px; text-align:center; }
-.map-train-status {
-  display:inline-block; margin-bottom:3px; padding:3px 6px; border-radius:999px;
-  background:white; border:1px solid #d2dde1; box-shadow:0 2px 5px rgba(0,0,0,.12);
-  font-size:10px; font-weight:700; white-space:nowrap;
+.scenic-hero::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(3,45,90,.16) 0%,rgba(3,45,90,0) 50%,rgba(239,247,252,.18) 100%);
+  pointer-events:none;
 }
-.map-train-status.delay { color:#b56d00; background:#fff8e7; border-color:#e8c27b; }
-.map-train-icon {
-  width:34px; height:28px; border-radius:8px 8px 5px 5px; display:flex;
-  align-items:center; justify-content:center; color:white; font-size:17px;
-  box-shadow:0 4px 8px rgba(0,0,0,.2);
+.scenic-hero::after{
+  content:"";position:absolute;inset:0;
+  box-shadow:inset 0 -22px 32px rgba(241,248,252,.22);
+  pointer-events:none;
 }
-.map-train-icon.to-misumi { background:#1978a8; }
-.map-train-icon.to-uto { background:#0f7b5c; }
-.direction-tabs { display:flex; gap:8px; margin:12px 0; }
-.direction-btn { flex:1; border:1px solid #cfd9dd; background:white; padding:9px; border-radius:9px; color:#52636a; }
-.direction-btn.active { background:#eaf5f1; border-color:#a8d4c5; color:#0e6b55; font-weight:700; }
-.time-row .train-type { font-size:11px; color:#708087; }
+/* 画像全体が見えるよう、画面ごとに焦点を調整 */
+.scenic-status{background-image:url("./assets/bg-status.jpg");background-position:center 38%}
+.scenic-location{background-image:url("./assets/bg-location.jpg");background-position:center 38%}
+.scenic-map{background-image:url("./assets/bg-map.jpg");background-position:center 53%}
+.scenic-timetable{background-image:url("./assets/bg-timetable.jpg");background-position:center 43%}
 
-.train-leaflet-icon {
-  background: transparent !important;
-  border: 0 !important;
+.scenic-title{
+  position:absolute;left:18px;bottom:34px;z-index:2;
+  color:white;text-shadow:0 2px 10px rgba(0,0,0,.42);
 }
-.map-train-icon {
-  margin: 0 auto;
+.scenic-kicker{display:block;font-size:9px;font-weight:800;letter-spacing:.18em;margin-bottom:3px}
+.scenic-title strong{font-size:26px;line-height:1.1}
+
+.page-content{
+  position:relative;z-index:4;
+  margin:-24px 12px 0;
+  padding-bottom:10px;
 }
 
+/* カード */
+.hero,.train-card,.detail-card,.timetable-box,.train-summary-item,.route-stage,.section-title{
+  background:var(--card);
+  border:1px solid rgba(216,229,239,.9);
+  box-shadow:var(--shadow);
+}
+.hero{
+  border-radius:22px;padding:19px 20px;
+}
+.hero-copy{display:flex;align-items:center;gap:11px;font-size:24px;font-weight:800}
+.hero p{margin:10px 0 0;color:var(--muted);line-height:1.65;font-size:14px}
+.status-dot{width:16px;height:16px;border-radius:50%;display:inline-block;box-shadow:0 0 0 5px rgba(38,168,97,.10)}
+.status-dot.normal{background:var(--green)} .status-dot.delay{background:var(--warn)} .status-dot.stop{background:var(--danger)}
 
-/* v4: 列車運行情報一覧 + 誤スワイプ抑制 */
-.route-scroll {
-  overscroll-behavior-x: contain;
-  touch-action: pan-x pan-y;
+.section-title{
+  margin:14px 0 10px;padding:13px 15px;border-radius:16px;
+  display:flex;justify-content:space-between;align-items:center;
 }
-#map, .leaflet-container {
-  overscroll-behavior: contain;
-  touch-action: none;
-}
-.train-summary-section {
-  margin: 6px 0 12px;
-}
-.train-summary-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.train-summary-heading h3 {
-  margin: 0;
-  font-size: 14px;
-}
-.train-summary-heading span {
-  color: var(--muted);
-  font-size: 11px;
-}
-.train-summary-list {
-  display: grid;
-  gap: 8px;
-}
-.train-summary-item {
-  width: 100%;
-  border: 1px solid #e1e7ea;
-  border-left: 4px solid var(--accent2);
-  border-radius: 12px;
-  background: #fff;
-  padding: 11px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  text-align: left;
-  color: var(--text);
-  box-shadow: 0 4px 14px rgba(0,0,0,.05);
-  cursor: pointer;
-}
-.train-summary-item.inbound { border-left-color: var(--accent); }
-.train-summary-item:active { transform: scale(.99); }
-.train-summary-main { min-width: 0; }
-.train-summary-title {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-.train-summary-location {
-  margin-top: 5px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.train-summary-status {
-  flex-shrink: 0;
-  padding: 5px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.train-summary-status.normal {
-  color: #176b4a;
-  background: #eaf7f1;
-}
-.train-summary-status.delay {
-  color: #a35f00;
-  background: #fff4da;
-}
+.section-title h2{margin:0;font-size:18px}
+.section-title span{font-size:11px;color:var(--muted)}
+.train-cards{display:grid;gap:10px}
+.train-card,.detail-card,.timetable-box{border-radius:18px;padding:15px}
+.train-card-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.train-name{font-weight:800;font-size:18px}
+.badge{padding:5px 9px;border-radius:999px;font-size:10px;background:#eef5f8;color:#526875;white-space:nowrap}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.info-grid div{background:#f7fafc;padding:10px;border-radius:12px}
+.info-grid small{display:block;color:var(--muted);margin-bottom:3px;font-size:11px}
+.info-grid strong{font-size:15px}
 
-
-/* v5: 列車アイコンの控えめな走行アニメーション
-   GIFを使わずCSSだけで、走行中であることを直感的に表現する。 */
-.train-icon,
-.map-train-icon {
-  animation: train-running 0.9s ease-in-out infinite;
-  transform-origin: 50% 100%;
-  will-change: transform;
+/* 列車位置 */
+.route-scroll{overflow-x:auto;padding:0 0 10px;overscroll-behavior-x:contain;touch-action:pan-x pan-y;scrollbar-width:none}
+.route-scroll::-webkit-scrollbar{display:none}
+.route-stage{
+  position:relative;width:860px;height:216px;border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(240,249,253,.96));
 }
+.route-line{position:absolute;left:72px;right:72px;top:118px;height:5px;border-radius:4px;background:#2180c3}
+.station{position:absolute;top:91px;transform:translateX(-50%);text-align:center;width:100px}
+.station::before{content:"";display:block;width:14px;height:14px;margin:20px auto 5px;background:white;border:3px solid #1e6599;border-radius:50%}
+.station-name{font-size:11px;font-weight:700;white-space:nowrap}
+.train-marker{position:absolute;top:43px;transform:translateX(-50%);cursor:pointer;text-align:center;transition:left .8s ease}
+.train-icon{display:flex;align-items:center;justify-content:center;width:44px;height:34px;border-radius:10px 10px 6px 6px;color:white;font-size:19px;box-shadow:0 5px 12px rgba(0,0,0,.18)}
+.train-marker.outbound .train-icon{background:#f3a600}
+.train-marker.inbound .train-icon{background:#1386d1}
+.train-marker span{display:block;margin-top:4px;font-size:10px;font-weight:800}
+.train-status-label{display:inline-block;margin-bottom:4px;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:800;background:#fff;border:1px solid #d7e4eb;white-space:nowrap}
+.train-status-label.delay{color:#c66a00;border-color:#f0c26c;background:#fff7df}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:4px 2px 12px}
+.legend-train{display:inline-block;width:18px;height:9px;border-radius:4px;margin-right:4px}
+.legend-train.outbound{background:#f3a600}.legend-train.inbound{background:#1386d1}
+.detail-card h3{margin:0 0 10px}
+.muted,.note{color:var(--muted);font-size:11px;line-height:1.6}
 
-@keyframes train-running {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25%      { transform: translateY(-1px) rotate(-0.6deg); }
-  50%      { transform: translateY(0) rotate(0deg); }
-  75%      { transform: translateY(-1px) rotate(0.6deg); }
+.train-summary-section{margin:8px 0 10px}
+.train-summary-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 3px}
+.train-summary-heading h3{margin:0;font-size:15px}.train-summary-heading span{font-size:10px;color:var(--muted)}
+.train-summary-list{display:grid;gap:8px}
+.train-summary-item{
+  width:100%;border-radius:15px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;color:var(--text);cursor:pointer;border-left:4px solid #f3a600
 }
+.train-summary-item.inbound{border-left-color:#1386d1}
+.train-summary-main{min-width:0}.train-summary-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.train-summary-location{margin-top:4px;font-size:11px;color:var(--muted)}
+.train-summary-status{flex:none;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:800;white-space:nowrap}
+.train-summary-status.normal{color:#177049;background:#e8f7ef}.train-summary-status.delay{color:#b35d00;background:#fff2d1}
 
-/* 動きを減らす設定を利用している端末ではアニメーションを停止 */
-@media (prefers-reduced-motion: reduce) {
-  .train-icon,
-  .map-train-icon {
-    animation: none;
-  }
+/* 地図 */
+#map{
+  position:relative;z-index:2;height:56vh;min-height:390px;border-radius:20px;overflow:hidden;
+  border:2px solid rgba(255,255,255,.92);box-shadow:var(--shadow);background:#eef3f5;
+  overscroll-behavior:contain;touch-action:none;
 }
+.train-leaflet-icon{background:transparent!important;border:0!important}
+.map-train-wrap{width:92px;text-align:center}
+.map-train-status{display:inline-block;margin-bottom:3px;padding:3px 6px;border-radius:999px;background:#fff;border:1px solid #d2dde1;box-shadow:0 2px 5px rgba(0,0,0,.12);font-size:9px;font-weight:800;white-space:nowrap}
+.map-train-status.delay{color:#b56d00;background:#fff8e7;border-color:#e8c27b}
+.map-train-icon{width:34px;height:28px;border-radius:8px 8px 5px 5px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;box-shadow:0 4px 8px rgba(0,0,0,.2);margin:0 auto}
+.map-train-icon.to-misumi{background:#f3a600}.map-train-icon.to-uto{background:#1386d1}
 
+/* 時刻表 */
+.timetable-box label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px}
+select{width:100%;padding:12px;border:1px solid #cad9e2;border-radius:12px;background:white;color:var(--text)}
+.direction-tabs{display:flex;gap:0;margin:12px 0;background:#eef4f8;border-radius:12px;padding:3px}
+.direction-btn{flex:1;border:0;background:transparent;padding:10px;border-radius:10px;color:#52636a}
+.direction-btn.active{background:linear-gradient(135deg,#159bed,#2568e8);color:white;font-weight:800;box-shadow:0 4px 12px rgba(20,119,225,.24)}
+.time-row{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid #edf1f3}
+.time-row:last-child{border-bottom:none}.time-row .train-type{font-size:10px;color:#708087}
 
-/* =========================================================
-   v6: 4画面ごとの沿線イメージ背景
-   画像そのものを強く加工せず、CSSで少しイラスト調に見せる。
-   ========================================================= */
-
-.page {
-  position: relative;
-  isolation: isolate;
-  background: transparent;
+/* 下部メニュー：生成イメージに近い「アイコン＋ラベル＋明確な選択状態」 */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding:7px 7px calc(7px + env(safe-area-inset-bottom));
+  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
+  background:rgba(255,255,255,.97);
+  border-top:1px solid #dce7ef;
+  box-shadow:0 -8px 24px rgba(23,54,79,.12);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
 }
+.nav-btn{
+  border:0;background:transparent;color:#6d7a86;border-radius:13px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-width:0;padding:6px 2px;transition:.2s ease;
+}
+.nav-icon{width:27px;height:27px;display:grid;place-items:center}
+.nav-icon svg{
+  width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.nav-label{font-size:10px;font-weight:700;white-space:nowrap}
+.nav-btn.active{
+  color:white;background:linear-gradient(145deg,#17a7ff,#096cf0);
+  box-shadow:0 6px 15px rgba(3,117,235,.28);
+}
+.nav-btn:active{transform:scale(.97)}
 
-/* 背景写真 */
-.page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
-  /* 写真感を少し抑え、アプリ背景としてなじませる */
-  filter: saturate(1.12) contrast(.92) brightness(1.07);
-  transform: scale(1.015);
+/* 列車アイコンの控えめな走行感 */
+.train-icon,.map-train-icon{animation:train-running .9s ease-in-out infinite;transform-origin:50% 100%;will-change:transform}
+@keyframes train-running{
+  0%,100%{transform:translateY(0) rotate(0)}
+  25%{transform:translateY(-1px) rotate(-.5deg)}
+  75%{transform:translateY(-1px) rotate(.5deg)}
 }
 
-/* 文字・カードを読みやすくする白いベール */
-.page::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,.12) 0%,
-      rgba(255,255,255,.24) 30%,
-      rgba(245,250,252,.58) 100%
-    );
+@media (min-width:850px){
+  body{max-width:980px;margin:0 auto;box-shadow:0 0 40px rgba(0,0,0,.07)}
+  .app-header,.bottom-nav{max-width:980px;margin:0 auto}
+  .train-cards{grid-template-columns:1fr 1fr}
+  .scenic-hero{height:340px}
 }
-
-.page-status::before {
-  background-image: url("./assets/bg-status.jpg");
-  background-position: center 35%;
+@media (max-width:520px){
+  .scenic-hero{height:285px}
+  .page-content{margin-top:-22px}
+  .scenic-title{bottom:32px}
 }
-
-.page-location::before {
-  background-image: url("./assets/bg-location.jpg");
-  background-position: center 34%;
+@media (max-width:390px){
+  .scenic-hero{height:265px}
+  .app-header{height:64px;padding:9px 12px}
+  .brand-mark{width:31px;height:31px}
+  h1{font-size:14px}
+  .nav-label{font-size:9px}
 }
-
-.page-map::before {
-  background-image: url("./assets/bg-map.jpg");
-  background-position: center 48%;
-}
-
-.page-timetable::before {
-  background-image: url("./assets/bg-timetable.jpg");
-  background-position: center 42%;
-}
-
-/* 背景写真を生かしながら、内容は“ガラスカード”風に */
-.hero,
-.train-card,
-.detail-card,
-.timetable-box,
-.train-summary-item,
-.route-stage {
-  background: rgba(255,255,255,.90);
-  -webkit-backdrop-filter: blur(9px) saturate(1.05);
-  backdrop-filter: blur(9px) saturate(1.05);
-  border-color: rgba(255,255,255,.72);
-  box-shadow: 0 10px 28px rgba(20,40,55,.14);
-}
-
-.hero {
-  background:
-    linear-gradient(135deg, rgba(238,250,245,.93), rgba(255,255,255,.86));
-}
-
-.route-stage {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.92), rgba(239,248,250,.88));
-}
-
-/* 地図は背景写真と競合しないよう、地図そのものをしっかり前面へ */
-#map {
-  position: relative;
-  z-index: 2;
-  border: 2px solid rgba(255,255,255,.82);
-  box-shadow: 0 12px 30px rgba(20,40,55,.18);
-}
-
-/* セクション見出しを写真上でも読みやすく */
-.section-title {
-  padding: 8px 12px;
-  margin-left: 0;
-  margin-right: 0;
-  border-radius: 14px;
-  background: rgba(255,255,255,.80);
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
-  box-shadow: 0 5px 16px rgba(20,40,55,.08);
-}
-
-.section-title h2 {
-  color: #18333f;
-}
-
-/* ヘッダーも景色と自然につながる */
-.app-header {
-  background: rgba(255,255,255,.84);
-  border-bottom: 1px solid rgba(255,255,255,.75);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
-  backdrop-filter: blur(14px) saturate(1.1);
-}
-
-/* 下部4メニューは元田さん案の「分かりやすさ」をさらに明確に */
-.bottom-nav {
-  background: rgba(255,255,255,.94);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 -7px 22px rgba(30,50,60,.10);
-}
-
-.nav-btn {
-  min-height: 50px;
-  transition: background .18s ease, color .18s ease, transform .18s ease;
-}
-
-.nav-btn.active {
-  box-shadow: inset 0 0 0 1px rgba(14,107,85,.08);
-}
-
-.nav-btn:active {
-  transform: scale(.97);
-}
-
-/* 小さな端末で背景が強すぎないよう調整 */
-@media (max-width: 520px) {
-  .page::after {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255,255,255,.18) 0%,
-        rgba(255,255,255,.32) 28%,
-        rgba(245,250,252,.66) 100%
-      );
-  }
-
-  .hero,
-  .train-card,
-  .detail-card,
-  .timetable-box,
-  .train-summary-item,
-  .route-stage {
-    background: rgba(255,255,255,.92);
-  }
-}
-
-/* 動きを減らす設定では視覚効果も穏やかに */
-@media (prefers-reduced-motion: reduce) {
-  .page::before {
-    transform: none;
-  }
+@media (prefers-reduced-motion:reduce){
+  .pager{transition:none}.train-icon,.map-train-icon{animation:none}
 }

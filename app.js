@@ -10,6 +10,7 @@ function setPage(index) {
   currentPage = Math.max(0, Math.min(3, index));
   pager.style.transform = `translateX(-${currentPage * 25}%)`;
   navButtons.forEach((b, i) => b.classList.toggle("active", i === currentPage));
+  document.body.dataset.page = String(currentPage);
   if (currentPage === 2 && map) setTimeout(() => map.invalidateSize(), 250);
 }
 navButtons.forEach(btn => btn.addEventListener("click", () => setPage(Number(btn.dataset.target))));

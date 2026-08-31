@@ -10,9 +10,12 @@
 </head>
 <body>
   <header class="app-header">
-    <div>
-      <p class="eyebrow">JR三角線 / Prototype</p>
-      <h1>三角線 列車情報</h1>
+    <div class="brand">
+      <span class="brand-mark">JR</span>
+      <div>
+        <p class="eyebrow">三角線 / Prototype</p>
+        <h1>三角線 リアルタイムナビ</h1>
+      </div>
     </div>
     <div class="updated" id="lastUpdated">更新 --:--:--</div>
   </header>
@@ -21,6 +24,10 @@
     <div class="pager" id="pager">
       <!-- 1. 運行状況 -->
       <section class="page page-status" data-page="0">
+        <div class="scenic-hero scenic-status" aria-label="三角駅の風景">
+          <div class="scenic-title"><span class="scenic-kicker">MISUMI LINE</span><strong>運行状況</strong></div>
+        </div>
+        <div class="page-content">
         <div class="hero">
           <div class="hero-copy">
             <span class="status-dot normal"></span>
@@ -34,10 +41,15 @@
           <span id="trainCount"></span>
         </div>
         <div id="trainCards" class="train-cards"></div>
+        </div>
       </section>
 
       <!-- 2. 列車位置 -->
       <section class="page page-location" data-page="1">
+        <div class="scenic-hero scenic-location" aria-label="海のピラミッドの風景">
+          <div class="scenic-title"><span class="scenic-kicker">MISUMI LINE</span><strong>列車位置</strong></div>
+        </div>
+        <div class="page-content">
         <div class="section-title">
           <h2>列車位置</h2>
           <span>横スクロール</span>
@@ -67,20 +79,30 @@
         <div id="selectedTrain" class="detail-card">
           <p class="muted">列車アイコンまたは運行情報を選択すると詳細を表示します。</p>
         </div>
+        </div>
       </section>
 
       <!-- 3. 地図 -->
       <section class="page page-map" data-page="2">
+        <div class="scenic-hero scenic-map" aria-label="長部田海床路の風景">
+          <div class="scenic-title"><span class="scenic-kicker">MISUMI LINE</span><strong>地図</strong></div>
+        </div>
+        <div class="page-content">
         <div class="section-title">
           <h2>地図</h2>
           <span>列車位置</span>
         </div>
         <div id="map"></div>
         <p class="note">※ 簡易版では仮の緯度・経度データを使用しています。</p>
+        </div>
       </section>
 
       <!-- 4. 時刻表 -->
       <section class="page page-timetable" data-page="3">
+        <div class="scenic-hero scenic-timetable" aria-label="住吉のあじさいの風景">
+          <div class="scenic-title"><span class="scenic-kicker">MISUMI LINE</span><strong>時刻表</strong></div>
+        </div>
+        <div class="page-content">
         <div class="section-title">
           <h2>時刻表</h2>
           <span>簡易表示</span>
@@ -95,15 +117,36 @@
           <div id="timetable"></div>
         </div>
         <p class="note">※ 2026年7月時点の公開時刻表をもとにした確認用データです。A列車は運転日に注意してください。</p>
+        </div>
       </section>
     </div>
   </main>
 
   <nav class="bottom-nav" aria-label="画面切替">
-    <button class="nav-btn active" data-target="0">運行状況</button>
-    <button class="nav-btn" data-target="1">列車位置</button>
-    <button class="nav-btn" data-target="2">地図</button>
-    <button class="nav-btn" data-target="3">時刻表</button>
+    <button class="nav-btn active" data-target="0" aria-label="運行状況">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M8 3h8a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm1 4h6M8 11h.01M16 11h.01M8 21l2-3m6 3-2-3"/></svg>
+      </span>
+      <span class="nav-label">運行状況</span>
+    </button>
+    <button class="nav-btn" data-target="1" aria-label="列車位置">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M7 3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm-1 8h12M8 7h8M8 21l2-3m6 3-2-3"/></svg>
+      </span>
+      <span class="nav-label">列車位置</span>
+    </button>
+    <button class="nav-btn" data-target="2" aria-label="地図">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="m3 6 5-2 8 3 5-2v13l-5 2-8-3-5 2V6Zm5-2v13m8-10v13"/></svg>
+      </span>
+      <span class="nav-label">地図</span>
+    </button>
+    <button class="nav-btn" data-target="3" aria-label="時刻表">
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </span>
+      <span class="nav-label">時刻表</span>
+    </button>
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
