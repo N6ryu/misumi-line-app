@@ -498,3 +498,91 @@ select{width:100%;padding:13px 14px;border:1px solid #cad9e2;border-radius:13px;
 @keyframes v20SplashFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes v20LogoFade { from { opacity: 0; } to { opacity: 1; } }
 .map-fallback-message { padding: 20px; line-height: 1.7; }
+
+
+/* v23: 外部地図ライブラリに依存しないSVG路線図 */
+#map {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(239,248,255,.78), rgba(239,248,255,.82)),
+    url("./assets/bg-map.jpg") center/cover no-repeat;
+}
+.svg-map-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  position: relative;
+}
+.svg-route-map {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  display: block;
+}
+.svg-route-halo {
+  fill: none;
+  stroke: rgba(255,255,255,.94);
+  stroke-width: 11;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.svg-route-line {
+  fill: none;
+  stroke: #1675c1;
+  stroke-width: 5.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.svg-station circle {
+  fill: #fff;
+  stroke: #0f4d7a;
+  stroke-width: 3;
+}
+.svg-station text {
+  font-size: 13px;
+  font-weight: 800;
+  fill: #17324a;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,.92);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.svg-train {
+  transition: transform .8s ease;
+}
+.svg-train:not(.stopped) .svg-train-icon {
+  animation: trainFloat 1.15s ease-in-out infinite alternate;
+}
+@keyframes trainFloat {
+  from { transform: translateY(-1px); }
+  to { transform: translateY(2px); }
+}
+.svg-train-icon rect:first-child {
+  fill: #f6bd23;
+  stroke: #17324a;
+  stroke-width: 2.5;
+}
+.svg-train-icon circle { fill: #17324a; }
+.svg-train-window { fill: #dff3ff !important; stroke: none !important; }
+.svg-train-dir { font-size: 17px; font-weight: 900; fill: #17324a; }
+.svg-train-label-bg {
+  fill: rgba(255,255,255,.94);
+  stroke: rgba(22,117,193,.45);
+  stroke-width: 1.5;
+}
+.svg-train-label {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #17324a;
+}
+.svg-map-note {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  font-size: 10px;
+  color: #587083;
+}

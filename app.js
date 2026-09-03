@@ -1,7 +1,6 @@
 
 let currentPage = 0;
-let map;
-let mapMarkers = {};
+let mapReady = false;
 let currentTimetableDirection = "toMisumi";
 
 const pager = document.getElementById("pager");
@@ -15,11 +14,8 @@ function setPage(index) {
   document.body.dataset.page = String(currentPage);
   if (currentPage === 2) {
     setTimeout(() => {
-      if (!map) {
-        try { initMap(); } catch (error) { console.error("地図の再初期化に失敗:", error); }
-      }
-      if (map) map.invalidateSize();
-    }, 250);
+      try { initMap(); } catch (error) { console.error("地図の再描画に失敗:", error); }
+    }, 120);
   }
 }
 navButtons.forEach(btn => btn.addEventListener("click", () => setPage(Number(btn.dataset.target))));
@@ -148,88 +144,99 @@ function renderRoute(trains) {
   }).join("");
 }
 
+function getRoutePoints() {
+  if (Array.isArray(lightweightRouteSegments) && lightweightRouteSegments.length) {
+    const points = [];
+    lightweightRouteSegments.forEach((seg, segIndex) => {
+      if (!seg || !Array.isArray(seg.points)) return;
+      seg.points.forEach((p, i) => {
+        if (segIndex > 0 && i === 0) return;
+        if (Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1])) points.push(p);
+      });
+    });
+    if (points.length > 1) return points;
+  }
+  return stations.map(s => [s.lat, s.lng]);
+}
+
+function mapProjection() {
+  const route = getRoutePoints();
+  const all = route.concat(stations.map(s => [s.lat, s.lng]));
+  const lats = all.map(p => p[0]);
+  const lngs = all.map(p => p[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const pad = 34, width = 720, height = 500;
+  const usableW = width - pad * 2, usableH = height - pad * 2;
+  const project = (lat, lng) => {
+    const x = pad + ((lng - minLng) / Math.max(0.000001, maxLng - minLng)) * usableW;
+    const y = pad + ((maxLat - lat) / Math.max(0.000001, maxLat - minLat)) * usableH;
+    return [x, y];
+  };
+  return { width, height, project };
+}
+
 function initMap() {
   const mapEl = document.getElementById("map");
   if (!mapEl) return;
-  if (!window.L) {
-    mapEl.innerHTML = '<div class="map-fallback-message">地図ライブラリを読み込めませんでした。通信環境を確認して再読み込みしてください。</div>';
-    return;
-  }
-  if (map) { setTimeout(() => map.invalidateSize(), 100); return; }
 
-  map = L.map("map", { zoomControl: true, preferCanvas: true });
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
+  const { width, height, project } = mapProjection();
+  const route = getRoutePoints();
+  const routePoints = route.map(p => project(p[0], p[1]).join(",")).join(" ");
 
-  const routeGroup = L.featureGroup().addTo(map);
-  try {
-    if (!Array.isArray(lightweightRouteSegments)) throw new Error("軽量路線データがありません");
-    lightweightRouteSegments.forEach(seg => {
-      if (!seg || !Array.isArray(seg.points) || seg.points.length < 2) return;
-      L.polyline(seg.points, {
-        weight: 5, opacity: .88,
-        color: seg.from === "熊本" || seg.from === "西熊本" || seg.from === "川尻" || seg.from === "富合" ? "#4d7c9b" : "#1675c1",
-        lineJoin: "round", lineCap: "round",
-        smoothFactor: 1.25
-      }).addTo(routeGroup);
-    });
-  } catch (error) {
-    console.error("軽量路線の描画に失敗。駅間簡易線へ切り替えます:", error);
-    L.polyline(stations.map(s => [s.lat, s.lng]), {
-      weight: 5, opacity: .85, color: "#1675c1", lineJoin: "round", lineCap: "round"
-    }).addTo(routeGroup);
-  }
+  const stationSvg = stations.map((s, i) => {
+    const [x, y] = project(s.lat, s.lng);
+    const anchor = x > width * .72 ? "end" : "start";
+    const tx = anchor === "end" ? x - 9 : x + 9;
+    const ty = y + (i % 2 ? -8 : 16);
+    return `<g class="svg-station">
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5"></circle>
+      <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anchor}">${s.name}</text>
+    </g>`;
+  }).join("");
 
-  stations.forEach(s => {
-    L.circleMarker([s.lat, s.lng], { radius: 5, weight: 2, fillOpacity: 1 })
-      .addTo(map).bindTooltip(s.name);
-  });
-
-  const bounds = routeGroup.getBounds();
-  if (bounds && bounds.isValid()) map.fitBounds(bounds, { padding: [28, 28] });
-  setTimeout(() => map.invalidateSize(), 250);
-}
-
-function trainDivIcon(t) {
-  const dirClass = t.direction === "三角方面" ? "to-misumi" : "to-kumamoto";
-  return L.divIcon({
-    className: "train-leaflet-icon",
-    iconSize: [104, 72],
-    iconAnchor: [52, 58],
-    popupAnchor: [0, -48],
-    html: `<div class="map-train-wrap">
-      <div class="map-train-status ${statusClass(t)}">${statusText(t)}</div>
-      <div class="map-train-icon ${dirClass}${isTerminalStopped(t) ? " stopped" : ""}">🚃</div>
-    </div>`
-  });
+  mapEl.innerHTML = `
+    <div class="svg-map-shell">
+      <svg id="routeSvgMap" class="svg-route-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="熊本駅から三角駅までの路線図">
+        <defs>
+          <filter id="trainShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".22"/>
+          </filter>
+        </defs>
+        <polyline class="svg-route-halo" points="${routePoints}"></polyline>
+        <polyline class="svg-route-line" points="${routePoints}"></polyline>
+        ${stationSvg}
+        <g id="svgTrainLayer"></g>
+      </svg>
+      <div class="svg-map-note">熊本〜三角の軽量路線データ（各駅間10中間点）</div>
+    </div>`;
+  mapReady = true;
 }
 
 function renderMap(trains) {
-  if (!map) return;
-  const activeIds = new Set(trains.map(t => t.id));
-  Object.keys(mapMarkers).forEach(id => {
-    if (!activeIds.has(id)) {
-      map.removeLayer(mapMarkers[id]);
-      delete mapMarkers[id];
-    }
-  });
+  if (!mapReady || !document.getElementById("routeSvgMap")) initMap();
+  const layer = document.getElementById("svgTrainLayer");
+  if (!layer) return;
 
-  trains.forEach(t => {
-    if (!mapMarkers[t.id]) {
-      mapMarkers[t.id] = L.marker([t.lat, t.lng], {icon: trainDivIcon(t)}).addTo(map);
-    } else {
-      mapMarkers[t.id].setLatLng([t.lat, t.lng]);
-      mapMarkers[t.id].setIcon(trainDivIcon(t));
-    }
-
+  const { project } = mapProjection();
+  layer.innerHTML = trains.map(t => {
+    if (!Number.isFinite(t.lat) || !Number.isFinite(t.lng)) return "";
+    const [x, y] = project(t.lat, t.lng);
     const terminal = isTerminalStopped(t);
-    mapMarkers[t.id].bindPopup(
-      `<strong>${t.id}${t.serviceName ? " " + t.serviceName : ""}</strong><br>` +
-      `${locationText(t)}<br>` +
-      `${terminal ? "終点到着" : `次駅：${t.nextStation}<br>${nextTimeLabel(t)}：${nextTimeValue(t)}`}`
-    );
-  });
+    const status = statusText(t);
+    const dir = t.direction === "三角方面" ? "→" : "←";
+    return `<g class="svg-train ${terminal ? "stopped" : ""}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">
+      <rect class="svg-train-label-bg" x="-48" y="-45" width="96" height="24" rx="12"></rect>
+      <text class="svg-train-label" x="0" y="-29" text-anchor="middle">${t.id} ${status}</text>
+      <g class="svg-train-icon" filter="url(#trainShadow)">
+        <rect x="-18" y="-18" width="36" height="29" rx="7"></rect>
+        <rect class="svg-train-window" x="-11" y="-12" width="8" height="7" rx="1"></rect>
+        <rect class="svg-train-window" x="3" y="-12" width="8" height="7" rx="1"></rect>
+        <circle cx="-10" cy="13" r="4"></circle><circle cx="10" cy="13" r="4"></circle>
+        <text class="svg-train-dir" x="0" y="3" text-anchor="middle">${dir}</text>
+      </g>
+    </g>`;
+  }).join("");
 }
 
 function initTimetable() {
@@ -332,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("地図の初期化に失敗しました:", error);
     const mapEl = document.getElementById("map");
     if (mapEl) {
-      mapEl.innerHTML = '<div style="padding:20px">地図の読み込みに失敗しました。通信環境を確認して再読み込みしてください。</div>';
+      mapEl.innerHTML = '<div class="map-fallback-message">路線図の描画に失敗しました。ページを再読み込みしてください。</div>';
     }
   }
 
