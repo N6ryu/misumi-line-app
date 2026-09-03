@@ -1,3 +1,4 @@
+
 let currentPage = 0;
 let map;
 let mapMarkers = {};
@@ -5,6 +6,7 @@ let currentTimetableDirection = "toMisumi";
 
 const pager = document.getElementById("pager");
 const navButtons = [...document.querySelectorAll(".nav-btn")];
+const splashScreen = document.getElementById("splashScreen");
 
 function setPage(index) {
   currentPage = Math.max(0, Math.min(3, index));
@@ -15,14 +17,12 @@ function setPage(index) {
 }
 navButtons.forEach(btn => btn.addEventListener("click", () => setPage(Number(btn.dataset.target))));
 
-// ページ切替スワイプ。
-// 列車位置の横スクロールと地図操作は、外側のページ切替より優先する。
 let touchStartX = null;
 let touchStartY = null;
 let pageSwipeBlocked = false;
 
 function isInteractiveHorizontalArea(target) {
-  return Boolean(target.closest(".route-scroll, #map, .leaflet-container, select, button, .train-summary-item"));
+  return Boolean(target.closest(".route-scroll, #map, .leaflet-container, select, button, .train-summary-item, #timetable"));
 }
 
 pager.addEventListener("touchstart", e => {
@@ -34,61 +34,66 @@ pager.addEventListener("touchstart", e => {
 
 pager.addEventListener("touchend", e => {
   if (touchStartX === null || touchStartY === null) return;
-
   const touch = e.changedTouches[0];
   const dx = touch.clientX - touchStartX;
   const dy = touch.clientY - touchStartY;
-
-  // 誤操作防止：
-  // 1) 子要素の横操作・地図操作中は切り替えない
-  // 2) 90px以上の明確な横スワイプのみ
-  // 3) 横移動が縦移動の1.4倍以上の場合のみ
   if (!pageSwipeBlocked && Math.abs(dx) >= 90 && Math.abs(dx) >= Math.abs(dy) * 1.4) {
     setPage(currentPage + (dx < 0 ? 1 : -1));
   }
-
   touchStartX = null;
   touchStartY = null;
   pageSwipeBlocked = false;
 }, {passive:true});
 
-function formatTime(d) {
-  const date = d instanceof Date ? d : new Date(d);
-  return date.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
+function trainIllustration(train) {
+  if (train.serviceKind === "ds" || /A列車/.test(train.serviceName || "")) {
+    return `<div class="train-visual"><img src="./assets/atrain-photo.png" alt="A列車で行こう" /></div>`;
+  }
+  return `<div class="train-visual train-visual-generic" aria-hidden="true">🚃</div>`;
+}
+
+function statusClass(train) {
+  if (isTerminalStopped(train)) return "arrived";
+  if ((train.delayMinutes || 0) > 0) return "delay";
+  return "normal";
 }
 
 function renderStatus(trains) {
   document.getElementById("trainCount").textContent = `${trains.length}列車`;
   document.getElementById("serviceStatus").textContent = "列車運行情報";
   document.getElementById("serviceMessage").textContent =
-    "列車位置と時刻表を照合しながら運行状況を表示します。";
+    "時刻表との照合を前提に、現在位置・次駅・到着予定を分かりやすく表示します。";
 
   const cards = document.getElementById("trainCards");
-  cards.innerHTML = trains.map(t => `
-    <article class="train-card">
-      <div class="train-card-top">
-        <div>
-          <div class="train-name">${t.id}</div>
-          ${t.serviceName ? `<div class="train-service-name">${t.serviceName}</div>` : ""}
+  cards.innerHTML = trains.map(t => {
+    const terminal = isTerminalStopped(t);
+    return `
+      <article class="train-card">
+        <div class="train-card-top">
+          <div class="train-identify">
+            ${trainIllustration(t)}
+            <div>
+              <div class="train-name">${t.id}</div>
+              ${t.serviceName ? `<div class="train-service-name">${t.serviceName}</div>` : ""}
+            </div>
+          </div>
+          <span class="badge">${t.rawDirection}・${t.direction}</span>
         </div>
-        <span class="badge">${t.rawDirection}・${t.direction}</span>
-      </div>
-      <div class="info-grid">
-        <div><small>運行状況</small><strong>${statusText(t)}</strong></div>
-        <div><small>現在位置</small><strong>${locationText(t)}</strong></div>
-        <div><small>次駅</small><strong>${isTerminalStopped(t) ? "終着" : t.nextStation}</strong></div>
-        <div><small>${nextTimeLabel(t)}</small><strong>${nextTimeValue(t)}</strong></div>
-      </div>
-      ${!isTerminalStopped(t) ? `<div class="train-note">速度 ${speedText(t)}</div>` : ""}
-    </article>
-  `).join("");
+        <div class="info-grid ${terminal ? 'terminal-grid' : ''}">
+          <div><small>運行状況</small><strong>${statusText(t)}</strong></div>
+          <div><small>現在位置</small><strong>${locationText(t)}</strong></div>
+          ${terminal ? '' : `<div><small>次駅</small><strong>${t.nextStation}</strong></div>
+          <div><small>${nextTimeLabel(t)}</small><strong>${nextTimeValue(t)}</strong></div>`}
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderRoute(trains) {
   const stationLayer = document.getElementById("stationLayer");
   const trainLayer = document.getElementById("trainLayer");
 
-  // 左：三角、右：熊本
   const displayStations = [...stations].reverse();
   const start = 60;
   const usableWidth = 707;
@@ -104,9 +109,10 @@ function renderRoute(trains) {
     const displayIndex = (stations.length - 1) - t.positionIndex;
     const x = start + usableWidth * (displayIndex / (stations.length - 1));
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
-    const stopped = isTerminalStopped(t);
-    return `<div class="train-marker ${cls}${stopped ? " stopped" : ""}" style="left:${x}px">
-      <div class="train-status-label">${stopped ? "三角駅 到着済み" : speedText(t)}</div>
+    const terminal = isTerminalStopped(t);
+    const labelText = terminal ? "終点到着" : statusText(t);
+    return `<div class="train-marker ${cls}${terminal ? " stopped" : ""}" style="left:${x}px">
+      <div class="train-status-label ${statusClass(t)}">${labelText}</div>
       <div class="train-icon">🚃</div>
       <span>${t.id}</span>
     </div>`;
@@ -115,7 +121,7 @@ function renderRoute(trains) {
   const summary = document.getElementById("trainSummary");
   summary.innerHTML = trains.map(t => {
     const cls = t.direction === "三角方面" ? "outbound" : "inbound";
-    const stopped = isTerminalStopped(t);
+    const terminal = isTerminalStopped(t);
     return `<article class="train-summary-item ${cls}">
       <div class="train-summary-main">
         <div class="train-summary-title">
@@ -124,15 +130,12 @@ function renderRoute(trains) {
         </div>
         <div class="train-summary-location">${locationText(t)}</div>
         <div class="train-summary-meta">
-          ${stopped ? "三角駅に到着済み" : `次駅：${t.nextStation}　速度：${speedText(t)}`}
+          ${terminal ? "終点到着のため、次駅表示はありません。" : `次駅：${t.nextStation}`}
         </div>
       </div>
       <div class="train-summary-side">
-        <span class="train-summary-status ${stopped ? "arrived" : "pending"}">${statusText(t)}</span>
-        <span class="train-summary-eta">
-          <small>${nextTimeLabel(t)}</small>
-          <strong>${nextTimeValue(t)}</strong>
-        </span>
+        <span class="train-summary-status ${statusClass(t)}">${statusText(t)}</span>
+        ${terminal ? '' : `<span class="train-summary-eta"><small>${nextTimeLabel(t)}</small><strong>${nextTimeValue(t)}</strong></span>`}
       </div>
     </article>`;
   }).join("");
@@ -150,29 +153,22 @@ function initMap() {
 
   const line = stations.map(s => [s.lat, s.lng]);
   L.polyline(line, { weight: 5, opacity: .75 }).addTo(map);
-
   stations.forEach(s => {
     L.circleMarker([s.lat, s.lng], { radius:5, weight:2, fillOpacity:1 })
       .addTo(map).bindTooltip(s.name);
   });
-
   map.fitBounds(L.latLngBounds(line), { padding:[30,30] });
 }
 
 function trainDivIcon(t) {
   const dirClass = t.direction === "三角方面" ? "to-misumi" : "to-kumamoto";
-  const delayCls = t.delayMinutes > 0 ? "delay" : "";
-
-  // Leaflet側の iconAnchor のみで位置決めし、
-  // CSS transform は使わない。これにより緯度経度の地点に
-  // アイコン下端中央が正確に乗る。
   return L.divIcon({
     className: "train-leaflet-icon",
-    iconSize: [92, 62],
-    iconAnchor: [46, 50],
+    iconSize: [104, 72],
+    iconAnchor: [52, 58],
     popupAnchor: [0, -48],
     html: `<div class="map-train-wrap">
-      <div class="map-train-status ${delayCls}">${isTerminalStopped(t) ? "停車中" : speedText(t)}</div>
+      <div class="map-train-status ${statusClass(t)}">${statusText(t)}</div>
       <div class="map-train-icon ${dirClass}${isTerminalStopped(t) ? " stopped" : ""}">🚃</div>
     </div>`
   });
@@ -187,6 +183,7 @@ function renderMap(trains) {
       delete mapMarkers[id];
     }
   });
+
   trains.forEach(t => {
     if (!mapMarkers[t.id]) {
       mapMarkers[t.id] = L.marker([t.lat, t.lng], {icon: trainDivIcon(t)}).addTo(map);
@@ -194,10 +191,12 @@ function renderMap(trains) {
       mapMarkers[t.id].setLatLng([t.lat, t.lng]);
       mapMarkers[t.id].setIcon(trainDivIcon(t));
     }
+
+    const terminal = isTerminalStopped(t);
     mapMarkers[t.id].bindPopup(
       `<strong>${t.id}${t.serviceName ? " " + t.serviceName : ""}</strong><br>` +
       `${locationText(t)}<br>` +
-      `${isTerminalStopped(t) ? "三角駅に到着済み" : `次駅：${t.nextStation}<br>${nextTimeLabel(t)}：${nextTimeValue(t)}`}`
+      `${terminal ? "終点到着" : `次駅：${t.nextStation}<br>${nextTimeLabel(t)}：${nextTimeValue(t)}`}`
     );
   });
 }
@@ -227,25 +226,54 @@ function syncDirectionButtons() {
   document.getElementById("toKumamotoBtn").classList.toggle("active", currentTimetableDirection === "toKumamoto");
 }
 
+function trainTypeBadge(type) {
+  const isA = /A列車/.test(type);
+  return `<span class="train-type ${isA ? 'ds' : 'local'}">${type}</span>`;
+}
+
 function renderTimetable() {
   const station = document.getElementById("stationSelect").value || stations[0].name;
   const stationData = timetableData?.[station];
   const rows = stationData?.[currentTimetableDirection] || [];
   const label = currentTimetableDirection === "toMisumi" ? "三角方面" : "熊本方面";
+  const timetable = document.getElementById("timetable");
 
   if (!rows.length) {
-    const message =
-      station === "熊本" && currentTimetableDirection === "toKumamoto"
-        ? "熊本駅は、このアプリで扱う熊本方面列車の終点です。"
-        : `${station}駅から${label}の列車はありません。`;
-    document.getElementById("timetable").innerHTML = `<p class="muted">${message}</p>`;
+    const message = station === "熊本" && currentTimetableDirection === "toKumamoto"
+      ? `
+        <div class="empty-state">
+          <strong>熊本駅はこの画面で扱う熊本方面列車の終点です。</strong>
+          <p>会議メモを踏まえ、熊本駅での鹿児島本線接続表示は今後の拡張候補として整理します。</p>
+        </div>`
+      : `<div class="empty-state"><strong>${station}駅から${label}の列車はありません。</strong></div>`;
+    timetable.innerHTML = message;
     return;
   }
-  document.getElementById("timetable").innerHTML =
-    `<p class="muted">${station}駅・${label}</p>` +
-    rows.map(([time, type]) =>
-      `<div class="time-row"><strong>${time}</strong><span class="train-type">${type}</span></div>`
-    ).join("");
+
+  timetable.innerHTML = `
+    <div class="timetable-head">
+      <div>
+        <p class="muted timetable-label">${station}駅</p>
+        <h3>${label}</h3>
+      </div>
+      <span class="timetable-hint">下へスクロール</span>
+    </div>
+    <div class="timetable-list">
+      ${rows.map(([time, type]) => `
+        <div class="time-row">
+          <strong class="time-value">${time}</strong>
+          ${trainTypeBadge(type)}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function hideSplash() {
+  if (!splashScreen) return;
+  splashScreen.classList.add("hidden");
+  document.body.classList.remove("splash-active");
+  setTimeout(() => splashScreen.remove(), 650);
 }
 
 async function refresh() {
@@ -258,5 +286,7 @@ async function refresh() {
 document.addEventListener("DOMContentLoaded", async () => {
   initMap();
   initTimetable();
+  setPage(0);
   await refresh();
+  setTimeout(hideSplash, 2400);
 });

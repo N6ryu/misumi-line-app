@@ -1,7 +1,6 @@
-// 三角線アプリ モックデータ v11
-// 対象：熊本〜三角 13駅
-// JR九州から提示されたサンプル2列車を、そのまま元データとして反映。
-// 遅延はこの列車位置データだけでは判定せず、正式な時刻表データとの照合後に算出する。
+
+// 三角線アプリ モックデータ v16
+// 熊本〜三角 13駅対象 / JR九州サンプル2列車を反映
 
 const stations = [
   { id: "S01", name: "熊本",     lat: 32.7898759, lng: 130.6886784 },
@@ -19,12 +18,12 @@ const stations = [
   { id: "S13", name: "三角",     lat: 32.6077500, lng: 130.4696800 }
 ];
 
-// JR九州から提示されたサンプルデータ（2026/01/01）
 let trains = [
   {
     id: "8031D",
     trainNo: "8031D",
     serviceName: "A列車で行こう 1号",
+    serviceKind: "ds",
     sourceCurrentStation: "富合",
     currentStation: "富合",
     nextStation: "宇土",
@@ -40,13 +39,13 @@ let trains = [
     formation: "キハ185-4",
     cabCarNo: "キハ185-4",
     scheduledNextArrival: "10:31",
-    scheduledNextDeparture: "10:31",
-    delayMinutes: null
+    delayMinutes: 0
   },
   {
     id: "527D",
     trainNo: "527D",
     serviceName: "普通",
+    serviceKind: "local",
     sourceCurrentStation: "三角",
     currentStation: "三角",
     nextStation: "三角",
@@ -62,8 +61,8 @@ let trains = [
     formation: "キハ147-106",
     cabCarNo: "キハ147-106",
     terminalArrived: true,
-    nextKumamotoDeparture: "11:00",
-    delayMinutes: null
+    terminalArrivalLabel: "終点到着",
+    delayMinutes: 0
   }
 ];
 
@@ -74,9 +73,7 @@ function haversineMeters(a, b) {
   const dLng = toRad(b.lng - a.lng);
   const lat1 = toRad(a.lat);
   const lat2 = toRad(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
@@ -84,96 +81,68 @@ function stationIndex(name) {
   return stations.findIndex(s => s.name === name);
 }
 
-// 列車の緯度経度を、currentStation→nextStation の線分上へ投影して
-// 路線図上の位置（0=熊本, 12=三角）を求める。
 function routePositionIndex(train) {
   const currentIndex = stationIndex(train.sourceCurrentStation || train.currentStation);
   const nextIndex = stationIndex(train.nextStation);
-
   if (currentIndex < 0) return 0;
   if (nextIndex < 0 || currentIndex === nextIndex) return currentIndex;
 
   const a = stations[currentIndex];
   const b = stations[nextIndex];
-
-  // 緯度経度を局所平面として扱う簡易投影。短い駅間なので十分。
   const cosLat = Math.cos(((a.lat + b.lat) / 2) * Math.PI / 180);
   const ax = a.lng * cosLat, ay = a.lat;
   const bx = b.lng * cosLat, by = b.lat;
   const px = train.lng * cosLat, py = train.lat;
-
   const abx = bx - ax, aby = by - ay;
   const apx = px - ax, apy = py - ay;
   const denom = abx * abx + aby * aby;
   const t = denom > 0 ? Math.max(0, Math.min(1, (apx * abx + apy * aby) / denom)) : 0;
-
   return currentIndex + (nextIndex - currentIndex) * t;
 }
 
 function isTerminalStopped(train) {
-  if (train.currentStation !== train.nextStation || train.currentStation !== train.nextStop) return false;
+  if (!(train.terminalArrived || (train.currentStation === train.nextStation && train.currentStation === train.nextStop))) return false;
   const station = stations.find(s => s.name === train.currentStation);
   if (!station) return false;
   return haversineMeters({lat: train.lat, lng: train.lng}, station) < 250;
 }
 
 function locationText(train) {
-  if (isTerminalStopped(train)) return `${train.currentStation}駅 停車中`;
-  if (train.currentStation !== train.nextStation) return `${train.currentStation}～${train.nextStation}間`;
+  if (isTerminalStopped(train)) return `${train.currentStation}駅`;
+  if (train.currentStation !== train.nextStation) return `${train.currentStation}〜${train.nextStation}間`;
   return `${train.currentStation}駅付近`;
 }
 
-function speedText(train) {
-  if (isTerminalStopped(train)) return "停車中";
-  return Number.isFinite(train.speedKmh) ? `${train.speedKmh} km/h` : "--";
-}
-
 function statusText(train) {
-  if (isTerminalStopped(train)) return "到着済み";
-  if (train.delayMinutes === null || train.delayMinutes === undefined) return "時刻表照合待ち";
+  if (isTerminalStopped(train)) return "終点到着";
+  if (typeof train.delayMinutes !== 'number' || Number.isNaN(train.delayMinutes)) return "確認中";
   return train.delayMinutes > 0 ? `${train.delayMinutes}分遅れ` : "定刻";
 }
 
 function nextTimeLabel(train) {
-  if (isTerminalStopped(train)) return "次の熊本方面";
+  if (isTerminalStopped(train)) return "";
   return "次駅到着予定";
 }
 
-function nextTimeValue(train) {
-  if (isTerminalStopped(train)) {
-    return train.nextKumamotoDeparture ? `${train.nextKumamotoDeparture}発` : "到着済み";
-  }
-
-  if (train.scheduledNextArrival) {
-    const delay = Number(train.delayMinutes || 0);
-    if (delay > 0) {
-      const [hh, mm] = train.scheduledNextArrival.split(":").map(Number);
-      const d = new Date(2000, 0, 1, hh, mm + delay);
-      const value = d.toLocaleTimeString("ja-JP", {hour:"2-digit", minute:"2-digit"});
-      return `${value}頃`;
-    }
-    return `${train.scheduledNextArrival}（所定）`;
-  }
-  return "時刻表照合待ち";
+function addDelay(baseTime, delayMinutes = 0) {
+  const [hh, mm] = String(baseTime).split(':').map(Number);
+  const d = new Date(2000, 0, 1, hh, mm + delayMinutes);
+  return d.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'});
 }
 
-trains = trains.map(t => ({
-  ...t,
-  positionIndex: routePositionIndex(t)
-}));
+function nextTimeValue(train) {
+  if (isTerminalStopped(train)) return "";
+  if (train.scheduledNextArrival) return addDelay(train.scheduledNextArrival, train.delayMinutes || 0);
+  return "確認中";
+}
+
+trains = trains.map(t => ({ ...t, positionIndex: routePositionIndex(t) }));
 
 async function loadTrainData() {
   return trains;
 }
 
-// v11ではJRサンプルのスナップショット位置を保持するため、位置自体は動かさない。
-// 列車アイコンの「走行感」はCSSアニメーションで表現する。
-function simulateTrainMovement() {
-  return;
-}
-
 const timetableData = {
-
   "熊本": {
     toMisumi: [
       ["06:17","普通"],["07:19","普通"],["08:04","普通"],["08:58","普通"],
@@ -229,16 +198,16 @@ const timetableData = {
   "宇土": {
     toMisumi: [
       ["06:34","普通"],["07:38","普通"],["08:20","普通"],["09:15","普通"],
-      ["10:12","普通"],["10:31","A列車※"],["11:47","普通"],["12:56","普通"],
-      ["13:17","A列車※"],["13:54","普通"],["15:22","普通"],["16:22","普通"],
+      ["10:12","普通"],["10:31","A列車1号"],["11:47","普通"],["12:56","普通"],
+      ["13:17","A列車3号"],["13:54","普通"],["15:22","普通"],["16:22","普通"],
       ["17:23","普通"],["18:42","普通"],["19:41","普通"],["20:45","普通"],
       ["21:47","普通"],["23:13","普通"]
     ],
     toKumamoto: [
       ["06:27","普通"],["07:15","普通"],["07:57","普通"],["08:59","普通"],
-      ["09:40","普通"],["10:54","普通"],["11:35","普通"],["12:26","A列車※"],
+      ["09:40","普通"],["10:54","普通"],["11:35","普通"],["12:26","A列車2号"],
       ["13:16","普通"],["14:16","普通"],["15:19","普通"],["16:44","普通"],
-      ["17:03","A列車※"],["17:47","普通"],["19:01","普通"],["20:03","普通"],
+      ["17:03","A列車4号"],["17:47","普通"],["19:01","普通"],["20:03","普通"],
       ["21:08","普通"],["22:08","普通"]
     ]
   },
@@ -255,7 +224,7 @@ const timetableData = {
     toKumamoto: [["06:12","普通"],["06:59","普通"],["07:39","普通"],["08:44","普通"],["09:24","普通"],["10:37","普通"],["11:20","普通"],["12:59","普通"],["14:01","普通"],["15:03","普通"],["16:29","普通"],["17:31","普通"],["18:43","普通"],["19:48","普通"],["20:52","普通"],["21:53","普通"]]
   },
   "網田": {
-    toMisumi: [["06:55","普通"],["07:57","普通"],["08:40","普通"],["09:40","普通"],["10:32","普通"],["11:17","A列車※"],["12:10","普通"],["13:16","普通"],["13:57","A列車※"],["14:17","普通"],["15:41","普通"],["16:47","普通"],["17:46","普通"],["19:01","普通"],["20:03","普通"],["21:08","普通"],["22:08","普通"],["23:32","普通"]],
+    toMisumi: [["06:55","普通"],["07:57","普通"],["08:40","普通"],["09:40","普通"],["10:32","普通"],["11:17","A列車1号"],["12:10","普通"],["13:16","普通"],["13:57","A列車3号"],["14:17","普通"],["15:41","普通"],["16:47","普通"],["17:46","普通"],["19:01","普通"],["20:03","普通"],["21:08","普通"],["22:08","普通"],["23:32","普通"]],
     toKumamoto: [["06:08","普通"],["06:55","普通"],["07:35","普通"],["08:39","普通"],["09:20","普通"],["10:33","普通"],["11:16","普通"],["12:54","普通"],["13:56","普通"],["14:59","普通"],["16:25","普通"],["17:27","普通"],["18:39","普通"],["19:44","普通"],["20:48","普通"],["21:49","普通"]]
   },
   "赤瀬": {
@@ -272,6 +241,6 @@ const timetableData = {
   },
   "三角": {
     toMisumi: [],
-    toKumamoto: [["05:52","普通"],["06:36","普通"],["07:19","普通"],["08:21","普通"],["09:04","普通"],["10:14","普通"],["11:00","普通"],["11:58","A列車※"],["12:38","普通"],["13:40","普通"],["14:42","普通"],["16:09","普通"],["16:35","A列車※"],["17:11","普通"],["18:23","普通"],["19:28","普通"],["20:32","普通"],["21:33","普通"]]
+    toKumamoto: [["05:52","普通"],["06:36","普通"],["07:19","普通"],["08:21","普通"],["09:04","普通"],["10:14","普通"],["11:00","普通"],["11:58","A列車2号"],["12:38","普通"],["13:40","普通"],["14:42","普通"],["16:09","普通"],["16:35","A列車4号"],["17:11","普通"],["18:23","普通"],["19:28","普通"],["20:32","普通"],["21:33","普通"]]
   }
 };

@@ -2,13 +2,21 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>三角線 列車情報アプリ（簡易版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>三角線 リアルタイムナビ</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="./styles.css?v=15" />
+  <link rel="stylesheet" href="./styles.css?v=16" />
 </head>
-<body>
+<body class="splash-active">
+  <div id="splashScreen" class="splash-screen" aria-label="アプリ起動画面">
+    <div class="splash-inner">
+      <img src="./assets/splash-logo.png" alt="三角線 リアルタイムナビ ロゴ" class="splash-logo" />
+      <p class="splash-title">三角線 リアルタイムナビ</p>
+      <p class="splash-subtitle">JR三角線の列車位置・地図・時刻表をひとつに。</p>
+    </div>
+  </div>
+
   <header class="app-header">
     <div class="brand">
       <span class="jr-logo-crop" aria-hidden="true">
@@ -23,85 +31,81 @@
 
   <main id="app">
     <div class="pager" id="pager">
-      <!-- 1. 運行状況 -->
       <section class="page page-status" data-page="0">
         <div class="page-content">
-        <div class="hero">
-          <div class="hero-copy">
-            <span class="status-dot normal"></span>
-            <span id="serviceStatus">平常運転</span>
+          <div class="hero">
+            <div class="hero-copy">
+              <span class="status-dot normal"></span>
+              <span id="serviceStatus">列車運行情報</span>
+            </div>
+            <p id="serviceMessage">列車位置と時刻表を照合しながら運行状況を表示します。</p>
           </div>
-          <p id="serviceMessage">遅延は正式な時刻表データとの照合後に判定します。</p>
-        </div>
 
-        <div class="section-title">
-          <h2>運行中の列車</h2>
-          <span id="trainCount"></span>
-        </div>
-        <div id="trainCards" class="train-cards"></div>
+          <div class="section-title">
+            <h2>運行中の列車</h2>
+            <span id="trainCount"></span>
+          </div>
+          <div id="trainCards" class="train-cards"></div>
         </div>
       </section>
 
-      <!-- 2. 列車位置 -->
       <section class="page page-location" data-page="1">
         <div class="page-content">
-        <div class="section-title">
-          <h2>列車位置</h2>
-          <span>横スクロール</span>
-        </div>
-
-        <div class="route-scroll">
-          <div class="route-stage" id="routeStage">
-            <div class="route-line"></div>
-            <div id="stationLayer"></div>
-            <div id="trainLayer"></div>
+          <div class="section-title">
+            <h2>列車位置</h2>
+            <span>横スクロール</span>
           </div>
-        </div>
 
-        <div class="legend">
-          <span><i class="legend-train outbound"></i> 三角方面</span>
-          <span><i class="legend-train inbound"></i> 熊本方面</span>
-        </div>
-
-        <section class="train-summary-section" aria-labelledby="trainSummaryHeading">
-          <div class="train-summary-heading">
-            <h3 id="trainSummaryHeading">路線上の列車運行情報</h3>
-            <span>次駅到着予定</span>
+          <div class="route-scroll">
+            <div class="route-stage" id="routeStage">
+              <div class="route-line"></div>
+              <div id="stationLayer"></div>
+              <div id="trainLayer"></div>
+            </div>
           </div>
-          <div id="trainSummary" class="train-summary-list"></div>
-        </section>
-</div>
+
+          <div class="legend">
+            <span><i class="legend-train outbound"></i> 三角方面</span>
+            <span><i class="legend-train inbound"></i> 熊本方面</span>
+          </div>
+
+          <section class="train-summary-section" aria-labelledby="trainSummaryHeading">
+            <div class="train-summary-heading">
+              <h3 id="trainSummaryHeading">路線上の列車運行情報</h3>
+              <span>次駅到着予定</span>
+            </div>
+            <div id="trainSummary" class="train-summary-list"></div>
+          </section>
+        </div>
       </section>
 
-      <!-- 3. 地図 -->
       <section class="page page-map" data-page="2">
         <div class="page-content">
-        <div class="section-title">
-          <h2>地図</h2>
-          <span>列車位置</span>
-        </div>
-        <div id="map"></div>
-        <p class="note">※ JR九州から提示されたサンプル2列車の緯度・経度を表示しています。</p>
+          <div class="section-title">
+            <h2>地図</h2>
+            <span>列車位置</span>
+          </div>
+          <div id="map"></div>
+          <p class="note">※ 実運用時は、JR九州から提供される証明書付きデータ取得と、国土数値情報等を用いた線形データへの切替を想定しています。</p>
         </div>
       </section>
 
-      <!-- 4. 時刻表 -->
       <section class="page page-timetable" data-page="3">
         <div class="page-content">
-        <div class="section-title">
-          <h2>時刻表</h2>
-          <span>簡易表示</span>
-        </div>
-        <div class="timetable-box">
-          <label for="stationSelect">駅を選択</label>
-          <select id="stationSelect"></select>
-          <div class="direction-tabs">
-            <button id="toMisumiBtn" class="direction-btn active">三角方面</button>
-            <button id="toKumamotoBtn" class="direction-btn">熊本方面</button>
+          <div class="section-title">
+            <h2>時刻表</h2>
+            <span>駅別表示</span>
           </div>
-          <div id="timetable"></div>
-        </div>
-        <p class="note">※ プロトタイプ用の確認データです。正式運用時はJR九州から提供・許諾された時刻表データへ置き換えます。</p>
+          <div class="timetable-box">
+            <label for="stationSelect">駅を選択</label>
+            <select id="stationSelect"></select>
+            <div class="direction-tabs">
+              <button id="toMisumiBtn" class="direction-btn active">三角方面</button>
+              <button id="toKumamotoBtn" class="direction-btn">熊本方面</button>
+            </div>
+            <div id="timetable"></div>
+          </div>
+          <p class="note">※ プロトタイプ用の確認データです。正式運用時はJR九州から提供・許諾された時刻表データへ置き換えます。</p>
         </div>
       </section>
     </div>
@@ -135,7 +139,7 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="./mock-data.js?v=15"></script>
-  <script src="./app.js?v=15"></script>
+  <script src="./mock-data.js?v=16"></script>
+  <script src="./app.js?v=16"></script>
 </body>
 </html>
