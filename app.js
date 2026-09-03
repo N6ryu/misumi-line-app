@@ -13,7 +13,14 @@ function setPage(index) {
   pager.style.transform = `translateX(-${currentPage * 25}%)`;
   navButtons.forEach((b, i) => b.classList.toggle("active", i === currentPage));
   document.body.dataset.page = String(currentPage);
-  if (currentPage === 2 && map) setTimeout(() => map.invalidateSize(), 250);
+  if (currentPage === 2) {
+    setTimeout(() => {
+      if (!map) {
+        try { initMap(); } catch (error) { console.error("地図の再初期化に失敗:", error); }
+      }
+      if (map) map.invalidateSize();
+    }, 250);
+  }
 }
 navButtons.forEach(btn => btn.addEventListener("click", () => setPage(Number(btn.dataset.target))));
 
@@ -142,39 +149,46 @@ function renderRoute(trains) {
 }
 
 function initMap() {
+  const mapEl = document.getElementById("map");
+  if (!mapEl) return;
   if (!window.L) {
-    document.getElementById("map").innerHTML = '<div style="padding:20px">地図ライブラリを読み込めませんでした。</div>';
+    mapEl.innerHTML = '<div class="map-fallback-message">地図ライブラリを読み込めませんでした。通信環境を確認して再読み込みしてください。</div>';
     return;
   }
-  map = L.map("map", { zoomControl:true });
+  if (map) { setTimeout(() => map.invalidateSize(), 100); return; }
+
+  map = L.map("map", { zoomControl: true, preferCanvas: true });
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
-  // 国土数値情報の鉄道路線形（熊本〜宇土：鹿児島線、宇土〜三角：三角線）を描画。
-  // 駅同士を直線で結ぶのではなく、実際の線形に沿った細かな緯度経度を使用する。
-  let routeLayer = null;
-  if (typeof detailedRouteGeoJSON !== "undefined") {
-    routeLayer = L.geoJSON(detailedRouteGeoJSON, {
-      style: feature => ({
-        weight: feature?.properties?.line === "三角線" ? 5 : 4,
-        opacity: .85,
-        color: feature?.properties?.line === "三角線" ? "#1675c1" : "#4d7c9b"
-      })
-    }).addTo(map);
+  const routeGroup = L.featureGroup().addTo(map);
+  try {
+    if (!Array.isArray(lightweightRouteSegments)) throw new Error("軽量路線データがありません");
+    lightweightRouteSegments.forEach(seg => {
+      if (!seg || !Array.isArray(seg.points) || seg.points.length < 2) return;
+      L.polyline(seg.points, {
+        weight: 5, opacity: .88,
+        color: seg.from === "熊本" || seg.from === "西熊本" || seg.from === "川尻" || seg.from === "富合" ? "#4d7c9b" : "#1675c1",
+        lineJoin: "round", lineCap: "round",
+        smoothFactor: 1.25
+      }).addTo(routeGroup);
+    });
+  } catch (error) {
+    console.error("軽量路線の描画に失敗。駅間簡易線へ切り替えます:", error);
+    L.polyline(stations.map(s => [s.lat, s.lng]), {
+      weight: 5, opacity: .85, color: "#1675c1", lineJoin: "round", lineCap: "round"
+    }).addTo(routeGroup);
   }
 
   stations.forEach(s => {
-    L.circleMarker([s.lat, s.lng], { radius:5, weight:2, fillOpacity:1 })
+    L.circleMarker([s.lat, s.lng], { radius: 5, weight: 2, fillOpacity: 1 })
       .addTo(map).bindTooltip(s.name);
   });
 
-  if (routeLayer && routeLayer.getBounds().isValid()) {
-    map.fitBounds(routeLayer.getBounds(), { padding:[28,28] });
-  } else {
-    const line = stations.map(s => [s.lat, s.lng]);
-    map.fitBounds(L.latLngBounds(line), { padding:[30,30] });
-  }
+  const bounds = routeGroup.getBounds();
+  if (bounds && bounds.isValid()) map.fitBounds(bounds, { padding: [28, 28] });
+  setTimeout(() => map.invalidateSize(), 250);
 }
 
 function trainDivIcon(t) {
@@ -303,7 +317,7 @@ async function refresh() {
 document.addEventListener("DOMContentLoaded", () => {
   // スプラッシュ画面は、地図や外部ライブラリの読み込み状況に関係なく必ず閉じる。
   // モバイル回線等で地図処理に時間がかかっても起動画面で止まらないようにする。
-  setTimeout(hideSplash, 2600);
+  setTimeout(hideSplash, 2500);
 
   try {
     setPage(0);

@@ -482,3 +482,19 @@ select{width:100%;padding:13px 14px;border:1px solid #cad9e2;border-radius:13px;
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* v20: 軽量化した起動フェード */
+.splash-inner {
+  opacity: 0;
+  transform: none;
+  animation: v20SplashFade .8s ease-out .08s forwards;
+}
+.splash-logo {
+  opacity: 0;
+  transform: none;
+  animation: v20LogoFade .9s ease-out .12s forwards;
+  will-change: opacity;
+}
+@keyframes v20SplashFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes v20LogoFade { from { opacity: 0; } to { opacity: 1; } }
+.map-fallback-message { padding: 20px; line-height: 1.7; }
