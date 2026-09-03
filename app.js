@@ -151,13 +151,30 @@ function initMap() {
     maxZoom: 18, attribution: "&copy; OpenStreetMap contributors"
   }).addTo(map);
 
-  const line = stations.map(s => [s.lat, s.lng]);
-  L.polyline(line, { weight: 5, opacity: .75 }).addTo(map);
+  // 国土数値情報の鉄道路線形（熊本〜宇土：鹿児島線、宇土〜三角：三角線）を描画。
+  // 駅同士を直線で結ぶのではなく、実際の線形に沿った細かな緯度経度を使用する。
+  let routeLayer = null;
+  if (typeof detailedRouteGeoJSON !== "undefined") {
+    routeLayer = L.geoJSON(detailedRouteGeoJSON, {
+      style: feature => ({
+        weight: feature?.properties?.line === "三角線" ? 5 : 4,
+        opacity: .85,
+        color: feature?.properties?.line === "三角線" ? "#1675c1" : "#4d7c9b"
+      })
+    }).addTo(map);
+  }
+
   stations.forEach(s => {
     L.circleMarker([s.lat, s.lng], { radius:5, weight:2, fillOpacity:1 })
       .addTo(map).bindTooltip(s.name);
   });
-  map.fitBounds(L.latLngBounds(line), { padding:[30,30] });
+
+  if (routeLayer && routeLayer.getBounds().isValid()) {
+    map.fitBounds(routeLayer.getBounds(), { padding:[28,28] });
+  } else {
+    const line = stations.map(s => [s.lat, s.lng]);
+    map.fitBounds(L.latLngBounds(line), { padding:[30,30] });
+  }
 }
 
 function trainDivIcon(t) {
@@ -288,5 +305,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   initTimetable();
   setPage(0);
   await refresh();
-  setTimeout(hideSplash, 2400);
+  setTimeout(hideSplash, 2600);
 });

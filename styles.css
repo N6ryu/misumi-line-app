@@ -439,3 +439,46 @@ select{width:100%;padding:13px 14px;border:1px solid #cad9e2;border-radius:13px;
   .train-icon,.map-train-icon{animation:none}
   .splash-screen{transition:none}
 }
+
+
+/* v17: 透明背景ロゴと国土数値情報の路線形 */
+.splash-screen {
+  background: linear-gradient(180deg, #eef8ff 0%, #ffffff 100%);
+}
+.splash-logo {
+  background: transparent;
+  filter: drop-shadow(0 12px 28px rgba(24, 73, 116, .16));
+}
+.map-route-note {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+
+/* v18: updated splash logo and soft fade-in */
+.splash-inner {
+  opacity: 0;
+  transform: translateY(10px) scale(.985);
+  animation: splashFadeIn .95s cubic-bezier(.2,.75,.25,1) .12s forwards;
+}
+.splash-logo {
+  opacity: 0;
+  transform: scale(.96);
+  animation: splashLogoIn 1.15s cubic-bezier(.2,.75,.25,1) .22s forwards;
+}
+.splash-title, .splash-subtitle {
+  animation: splashTextIn .85s ease-out .35s both;
+}
+@keyframes splashFadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes splashLogoIn {
+  0% { opacity: 0; transform: scale(.96); }
+  60% { opacity: 1; transform: scale(1.02); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes splashTextIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
