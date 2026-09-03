@@ -300,10 +300,30 @@ async function refresh() {
   renderMap(data);
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  initMap();
-  initTimetable();
-  setPage(0);
-  await refresh();
+document.addEventListener("DOMContentLoaded", () => {
+  // スプラッシュ画面は、地図や外部ライブラリの読み込み状況に関係なく必ず閉じる。
+  // モバイル回線等で地図処理に時間がかかっても起動画面で止まらないようにする。
   setTimeout(hideSplash, 2600);
+
+  try {
+    setPage(0);
+    initTimetable();
+  } catch (error) {
+    console.error("初期画面の初期化に失敗しました:", error);
+  }
+
+  try {
+    initMap();
+  } catch (error) {
+    console.error("地図の初期化に失敗しました:", error);
+    const mapEl = document.getElementById("map");
+    if (mapEl) {
+      mapEl.innerHTML = '<div style="padding:20px">地図の読み込みに失敗しました。通信環境を確認して再読み込みしてください。</div>';
+    }
+  }
+
+  // データ描画に失敗しても、アプリ本体への遷移は止めない。
+  refresh().catch(error => {
+    console.error("列車データの描画に失敗しました:", error);
+  });
 });
