@@ -244,3 +244,18 @@ const timetableData = {
     toKumamoto: [["05:52","普通"],["06:36","普通"],["07:19","普通"],["08:21","普通"],["09:04","普通"],["10:14","普通"],["11:00","普通"],["11:58","A列車2号"],["12:38","普通"],["13:40","普通"],["14:42","普通"],["16:09","普通"],["16:35","A列車4号"],["17:11","普通"],["18:23","普通"],["19:28","普通"],["20:32","普通"],["21:33","普通"]]
   }
 };
+
+
+// v24: UI検証用の接続サンプル。正式運用ではJR九州提供・許諾データに置き換える。
+const connectionSamples = {
+  "熊本": [
+    { time: "11:03", line: "鹿児島本線", destination: "玉名方面", transferMinutes: 7, platform: "のりば確認" },
+    { time: "11:08", line: "豊肥本線", destination: "肥後大津方面", transferMinutes: 12, platform: "のりば確認" },
+    { time: "11:12", line: "鹿児島本線", destination: "八代方面", transferMinutes: 16, platform: "のりば確認" },
+    { time: "11:18", line: "九州新幹線", destination: "博多方面", transferMinutes: 22, platform: "新幹線口" }
+  ],
+  "宇土": [
+    { time: "10:39", line: "鹿児島本線", destination: "熊本方面", transferMinutes: 8, platform: "のりば確認" },
+    { time: "10:47", line: "鹿児島本線", destination: "八代方面", transferMinutes: 16, platform: "のりば確認" }
+  ]
+};
