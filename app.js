@@ -401,7 +401,7 @@ let currentScaleIndex = 0; // 初期状態（0 = 標準）
 
 // ボタンとクリックイベントの設定
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('font-size-btn');
+  const btn = document.getElementById('Mojibtn');
 
   if (btn) {
     btn.addEventListener('click', () => {
