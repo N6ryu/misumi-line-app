@@ -389,3 +389,32 @@ init().catch(err => {
   console.error(err);
   document.body.classList.remove("splash-active");
 });
+
+// 切り替えるサイズとボタンの表示テキストのリスト
+const fontScales = [
+  { scale: 1.0,  label: '文字サイズ: 標準' },
+  { scale: 1.2,  label: '文字サイズ: 大' },
+  { scale: 0.85, label: '文字サイズ: 小' }
+];
+
+let currentScaleIndex = 0; // 初期状態（0 = 標準）
+
+// ボタンとクリックイベントの設定
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('font-size-btn');
+
+  if (btn) {
+    btn.addEventListener('click', () => {
+      // 次のサイズにインデックスを進める（最後までいったら0に戻る）
+      currentScaleIndex = (currentScaleIndex + 1) % fontScales.length;
+
+      const current = fontScales[currentScaleIndex];
+
+      // 1. CSS変数を書き換えて文字サイズを変更
+      document.documentElement.style.setProperty('--font-scale', current.scale);
+
+      // 2. ボタンの表示テキストを変更
+      btn.textContent = current.label;
+    });
+  }
+});
