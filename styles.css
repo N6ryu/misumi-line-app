@@ -154,10 +154,32 @@ h1{margin:1px 0 0;font-size:calc(17px * var(--font-scale));line-height:1.15;whit
 .detail-grid div{background:#f7fafc;border-radius:11px;padding:10px;display:grid;gap:3px}
 .detail-grid small{color:var(--muted);font-size:10px}.detail-grid strong{font-size:calc(14px * var(--font-scale))}
 
-.Mojibtn{padding: 8px 16px;font-size:calc(14px * var(--font-scale);color: #ffffff;background-color: #007bff;border: none;border-radius: 6px;cursor: pointer;}
-.brand {display: flex;align-items: center;gap: 16px;}
-h1 {margin: 0;font-size:calc(24px * var(--font-scale));color: #333333;}
-.Mojibtn:hover {background-color: #febdbd;}
+/* 修正した末尾のコード */
+.Mojibtn {
+  padding: 8px 16px;
+  font-size: calc(14px * var(--font-scale)); /* ← 閉じカッコを修正 */
+  color: #ffffff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: calc(24px * var(--font-scale));
+  color: #333333;
+}
+
+.Mojibtn:hover {
+  background-color: #febdbd;
+}
 
 @media (min-width:700px){
   .app-shell{max-width:520px;margin:0 auto;border-left:1px solid #dbe6ee;border-right:1px solid #dbe6ee}
