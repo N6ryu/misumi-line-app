@@ -153,7 +153,7 @@ h1{margin:1px 0 0;font-size:17px;line-height:1.15;white-space:nowrap}
 .detail-grid div{background:#f7fafc;border-radius:11px;padding:10px;display:grid;gap:3px}
 .detail-grid small{color:var(--muted);font-size:10px}.detail-grid strong{font-size:14px}
 
-.Mojibtn
+.Mojibtn{padding: 8px 16px;font-size: 14px;font-weight: bold;color: #ffffff;background-color: #007bff;border: none;border-radius: 6px;cursor: pointer;}
 
 @media (min-width:700px){
   .app-shell{max-width:520px;margin:0 auto;border-left:1px solid #dbe6ee;border-right:1px solid #dbe6ee}
