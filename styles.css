@@ -156,6 +156,7 @@ h1{margin:1px 0 0;font-size:17px;line-height:1.15;white-space:nowrap}
 .Mojibtn{padding: 8px 16px;font-size: 14px;color: #ffffff;background-color: #007bff;border: none;border-radius: 6px;cursor: pointer;}
 .brand {display: flex;align-items: center;gap: 16px;}
 h1 {margin: 0;font-size: 24px;color: #333333;}
+.Mojibtn:hover {background-color: #0056b3;}
 
 @media (min-width:700px){
   .app-shell{max-width:520px;margin:0 auto;border-left:1px solid #dbe6ee;border-right:1px solid #dbe6ee}
