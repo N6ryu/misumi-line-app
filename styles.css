@@ -12,7 +12,7 @@ button{color:inherit}
 button:focus-visible,select:focus-visible{outline:3px solid rgba(22,118,189,.3);outline-offset:2px}
 .app-shell{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:#f5f8fa}
 
-/* --- ヘッダー領域（Mojibtnが消えないよう修正） --- */
+/* --- ヘッダー領域 --- */
 .app-header{height:var(--head-h);flex:0 0 var(--head-h);display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);z-index:10;gap:8px}
 .brand{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
 .jr-logo-crop{width:48px;height:38px;display:flex;align-items:center;overflow:hidden;flex-shrink:0}
@@ -21,7 +21,7 @@ button:focus-visible,select:focus-visible{outline:3px solid rgba(22,118,189,.3);
 h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#333333}
 .prototype-chip{font-size:calc(11px * var(--font-scale));font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#667b8a;flex-shrink:0}
 
-/* 文字サイズ変更ボタン（flex-shrink:0 で画面外への押し出しを防止） */
+/* 文字サイズ変更ボタン */
 .Mojibtn{
   padding:6px 10px;
   font-size:calc(12px * var(--font-scale));
@@ -31,7 +31,7 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
   border-radius:6px;
   cursor:pointer;
   white-space:nowrap;
-  flex-shrink:0; /* ★タイトルが長くてもボタンが絶対に隠れないように設定 */
+  flex-shrink:0;
   font-weight:700;
   box-shadow:0 2px 4px rgba(0,0,0,0.1);
 }
@@ -42,29 +42,33 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 .view{display:none;width:100%;height:100%;overflow:hidden}
 .view.active{display:block}
 .view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
-.navi-bg{background:linear-gradient(rgba(249,252,254,.88),rgba(249,252,254,.94)),url("./assets/student-misumi-station.png") center top/cover fixed}
-.connection-bg{background:linear-gradient(rgba(248,252,255,.9),rgba(248,252,255,.96)),url("./assets/student-kaishoro.png") center/cover}
-.map-bg{background:linear-gradient(rgba(248,252,255,.88),rgba(248,252,255,.96)),url("./assets/bg-map.jpg") center/cover}
-.timetable-bg{background:linear-gradient(rgba(250,252,253,.9),rgba(250,252,253,.96)),url("./assets/bg-timetable.jpg") center/cover}
+
+/* 背景グラデーションの透過度調整 */
+.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center top/cover fixed}
+.connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center/cover}
+.map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center/cover}
+.timetable-bg{background:linear-gradient(rgba(250,252,253,.3),rgba(250,252,253,.5)),url("./assets/bg-timetable.jpg") center/cover}
 
 .sticky-tools{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0 10px;background:linear-gradient(#f8fbfd 72%,rgba(248,251,253,0))}
-.direction-switch{display:grid;grid-template-columns:1fr 1fr;background:#e9f0f5;border-radius:13px;padding:3px}
+.direction-switch{display:grid;grid-template-columns:1fr 1fr;background:rgba(233,240,245,.7);border-radius:13px;padding:3px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .seg-btn{border:0;background:transparent;border-radius:10px;padding:10px 8px;font-weight:800;font-size:14px}
-.seg-btn.active{background:#fff;color:var(--blue);box-shadow:0 2px 7px rgba(20,54,74,.12)}
-.station-focus-btn{border:1px solid var(--line);background:#fff;border-radius:13px;padding:6px 10px;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:5px;align-items:center;min-width:92px}
+.seg-btn.active{background:rgba(255,255,255,.75);color:var(--blue);box-shadow:0 2px 7px rgba(20,54,74,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.station-focus-btn{border:1px solid var(--line);background:rgba(255,255,255,.65);border-radius:13px;padding:6px 10px;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:5px;align-items:center;min-width:92px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .station-focus-btn span:first-child{grid-column:1/3;font-size:9px;color:var(--muted)}
 .station-focus-btn strong{font-size:calc(14px * var(--font-scale))}
 .station-focus-btn span:last-child{font-size:calc(12px * var(--font-scale))}
 
-/* 白背景カード領域（順番そのまま・背景のみ半透明化） */
-.next-trains-card,.route-panel,.connection-overview,.map-card,.timetable-box{background:rgba(255,255,255,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(219,230,238,.92);border-radius:18px;box-shadow:0 6px 22px rgba(39,67,86,.08);}
+/* ★文字が書かれたメインカード群の半透明化 */
+.next-trains-card,.route-panel,.connection-overview,.map-card,.timetable-box{background:rgba(255,255,255,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(219,230,238,.92);border-radius:18px;box-shadow:0 6px 22px rgba(39,67,86,.08);}
 .next-trains-card{padding:13px;margin-bottom:11px}
 .section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .section-heading.compact h2,.section-heading.compact h3{margin:1px 0 0;font-size:calc(17px * var(--font-scale));}
 .section-heading.route-heading h2{margin:1px 0 0;font-size:calc(19px * var(--font-scale))}
 .text-btn{border:0;background:transparent;color:var(--blue);font-weight:800;font-size:calc(12px * var(--font-scale));padding:8px}
 .next-train-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
-.next-train-card{position:relative;border:1px solid #dce7ef;background:#fff;border-radius:13px;min-width:0;padding:9px 5px;text-align:center}
+
+/* ★カード内の白枠子要素（次回発車・列車情報カードなど）もすべて半透明化 */
+.next-train-card{position:relative;border:1px solid #dce7ef;background:rgba(255,255,255,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:13px;min-width:0;padding:9px 5px;text-align:center}
 .next-train-card strong{display:block;font-size:calc(19px * var(--font-scale))}
 .next-train-card span:not(.next-order){display:block;font-size:calc(11px * var(--font-scale));font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .next-train-card small{font-size:calc(9px * var(--font-scale));color:var(--muted)}
@@ -78,7 +82,7 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 .station-row,.train-on-route{width:100%;border:0;background:transparent;display:grid;grid-template-columns:42px 1fr;text-align:left;padding:0;position:relative}
 .station-row{min-height:58px}
 .station-axis{position:relative;display:flex;justify-content:center}
-.station-dot{position:absolute;top:14px;width:16px;height:16px;border:4px solid var(--blue);border-radius:50%;background:white;z-index:2}
+.station-dot{position:absolute;top:14px;width:16px;height:16px;border:4px solid var(--blue);border-radius:50%;background:rgba(255,255,255,.8);z-index:2}
 .station-line{position:absolute;top:28px;bottom:-31px;width:5px;border-radius:5px;background:linear-gradient(var(--blue),#73b4dc)}
 .station-row.hub .station-dot{width:22px;height:22px;top:11px;border-color:#123f67;box-shadow:0 0 0 5px rgba(22,118,189,.12)}
 .station-copy{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 6px 8px 0;border-bottom:1px solid rgba(219,230,238,.72)}
@@ -88,10 +92,12 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 .train-on-route{margin:-3px 0 8px;min-height:80px;align-items:center}
 .train-axis-icon{justify-self:center;width:34px;height:34px;border-radius:12px;background:#ffd25c;border:2px solid #26495e;display:grid;place-items:center;font-size:18px;z-index:3;box-shadow:0 3px 8px rgba(30,60,80,.14)}
 .train-on-route.ds .train-axis-icon{background:#172835;color:#fff}
-.train-route-card{display:block;background:#f8fbfd;border:1px solid #d9e6ee;border-radius:14px;padding:9px 10px;margin-right:2px}
+
+/* ★走行中列車カードの半透明化 */
+.train-route-card{display:block;background:rgba(248,251,253,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid #d9e6ee;border-radius:14px;padding:9px 10px;margin-right:2px}
 .train-route-top{display:flex;align-items:center;gap:6px;min-width:0}
 .train-route-top strong{font-size:calc(14px * var(--font-scale))}
-.train-route-top em{font-style:normal;font-size:calc(10px * var(--font-scale));color:#825f00;background:#fff3c9;border-radius:999px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.train-route-top em{font-style:normal;font-size:calc(10px * var(--font-scale));color:#825f00;background:rgba(255,243,201,.8);border-radius:999px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .train-route-top b{margin-left:auto;font-size:calc(10px * var(--font-scale));border-radius:999px;padding:3px 7px}
 .normal{color:var(--green)!important}.delay{color:var(--red)!important}.arrived{color:#627786!important}
 .train-route-time{display:block;font-size:calc(18px * var(--font-scale));font-weight:900;color:#173d59;margin-top:3px}
@@ -102,39 +108,45 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 .page-title h2{font-size:calc(23px * var(--font-scale));margin:2px 0 5px}
 .page-title p{font-size:calc(12px * var(--font-scale));color:var(--muted);line-height:1.6;margin:0}
 .connection-overview{padding:16px}
-.arrival-card{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;background:#f5fbff;border:1px solid #d9eaf5;border-radius:14px;padding:12px}
+.arrival-card{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;background:rgba(245,251,255,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid #d9eaf5;border-radius:14px;padding:12px}
 .arrival-card .mini-label{grid-column:1/3;font-size:10px;color:var(--muted)}
 .arrival-card strong{font-size:calc(19px * var(--font-scale))}
-.status-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 9px;background:#eef8f4;font-size:11px;font-weight:900}
+.status-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 9px;background:rgba(238,248,244,.8);font-size:11px;font-weight:900}
 .connection-arrow{text-align:center;font-size:22px;color:#7290a4;padding:5px}
 .connection-list{display:grid;gap:8px;margin-top:10px}
-.connection-item{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:8px;border:1px solid #dbe6ee;border-radius:12px;background:#fff;padding:10px}
+
+/* ★乗り継ぎリストアイテムの半透明化 */
+.connection-item{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:8px;border:1px solid #dbe6ee;border-radius:12px;background:rgba(255,255,255,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:10px}
 .connection-item.large{grid-template-columns:62px 1fr auto;padding:12px}
 .connection-item>strong{font-size:calc(18px * var(--font-scale));color:#173d59}
 .connection-item div{display:grid;gap:2px}
 .connection-item div b{font-size:calc(13px * var(--font-scale))}.connection-item div span{font-size:11px;color:var(--muted)}
 .connection-item small{font-size:calc(10px * var(--font-scale));color:var(--blue);font-weight:800}
-.prototype-note{margin-top:12px;padding:12px;border-radius:13px;background:rgba(255,247,218,.92);font-size:11px;line-height:1.5;display:grid;gap:4px}
+.prototype-note{margin-top:12px;padding:12px;border-radius:13px;background:rgba(255,247,218,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;line-height:1.5;display:grid;gap:4px}
 .prototype-note strong{color:#8a6500}
 
 .map-card{overflow:hidden;padding:5px;min-height:430px}
 .svg-route-map{width:100%;height:auto;min-height:420px;display:block}
 .svg-route-halo{fill:none;stroke:white;stroke-width:11;stroke-linecap:round;stroke-linejoin:round}
 .svg-route-line{fill:none;stroke:var(--blue);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round}
-.svg-station circle{fill:white;stroke:#0f4d7a;stroke-width:3}
+.svg-station circle{fill:rgba(255,255,255,.8);stroke:#0f4d7a;stroke-width:3}
 .svg-station text{font-size:calc(13px * var(--font-scale));font-weight:800;fill:#17324a;paint-order:stroke;stroke:white;stroke-width:4px}
 .svg-train-circle{fill:#ffd25c;stroke:#173d59;stroke-width:2}.svg-train text{font-size:calc(17px * var(--font-scale))}
-.svg-train-label-bg{fill:rgba(255,255,255,.95);stroke:#a9c9dd}.svg-train-label{font-size:calc(11px * var(--font-scale));font-weight:800;fill:#17324a}
+.svg-train-label-bg{fill:rgba(255,255,255,.75);stroke:#a9c9dd}.svg-train-label{font-size:calc(11px * var(--font-scale));font-weight:800;fill:#17324a}
 .footnote{font-size:calc(10px * var(--font-scale));color:var(--muted);line-height:1.5;margin:8px 4px}
 
 .timetable-box{padding:14px;}
 .timetable-box label{display:block;font-size:calc(11px * var(--font-scale));font-weight:800;margin-bottom:5px;}
-.timetable-box select{width:100%;height:44px;border:1px solid #cbdbe6;border-radius:11px;background:#fff;padding:0 10px;font-size:calc(16px * var(--font-scale));}
-.direction-tabs{display:grid;grid-template-columns:1fr 1fr;background:#eaf1f5;border-radius:12px;padding:3px;margin:10px 0}
-.direction-btn{border:0;background:transparent;border-radius:9px;padding:9px;font-weight:800}
-.direction-btn.active{background:white;color:var(--blue)}
+
+/* ★時刻表セレクトボックスの半透明化 */
+.timetable-box select{width:100%;height:44px;border:1px solid #cbdbe6;border-radius:11px;background:rgba(255,255,255,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0 10px;font-size:calc(16px * var(--font-scale));}
+.direction-tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(234,241,245,.7);border-radius:12px;padding:3px;margin:10px 0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.direction-btn{border:0;background:transparent;border-radius:99px;padding:9px;font-weight:800}
+.direction-btn.active{background:rgba(255,255,255,.8);color:var(--blue);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .timetable-list{display:grid;gap:1px;max-height:calc(100dvh - 310px);overflow-y:auto;border-radius:10px;border:1px solid #e0e8ee}
-.timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:#fff;border-bottom:1px solid #edf2f5}
+
+/* ★時刻表行の半透明化 */
+.timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:rgba(255,255,255,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid #edf2f5}
 .timetable-row strong{font-size:calc(18px * var(--font-scale))}.timetable-row span{font-size:calc(12px * var(--font-scale))}
 .empty-state{padding:16px;text-align:center;color:var(--muted);font-size:calc(12px * var(--font-scale))}
 
