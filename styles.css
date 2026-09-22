@@ -40,7 +40,7 @@ h1{margin:1px 0 0;font-size:calc(17px * var(--font-scale));line-height:1.15;whit
 .next-trains-card,.route-panel,.connection-overview,.map-card,.timetable-box{background:rgba(255,255,255,.94);border:1px solid rgba(219,230,238,.92);border-radius:18px;box-shadow:0 6px 22px rgba(39,67,86,.08)}
 .next-trains-card{padding:13px;margin-bottom:11px}
 .section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
-.section-heading.compact h2,.section-heading.compact h3{margin:1px 0 0;font-size:calc(17px * var(--font-scale))}
+.section-heading.compact h2,.section-heading.compact h3{margin:1px 0 0;font-size:calc(17px * var(--font-scale));opacity: 0.5;}
 .section-heading.route-heading h2{margin:1px 0 0;font-size:calc(19px * var(--font-scale))}
 .text-btn{border:0;background:transparent;color:var(--blue);font-weight:800;font-size:calc(12px * var(--font-scale));padding:8px}
 .next-train-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
