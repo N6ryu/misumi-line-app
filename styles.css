@@ -146,8 +146,9 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 
 /* ★重なり防止：スクロールエリア枠および行の背景を透明にして親の透過を魅せる */
 .timetable-list{display:grid;gap:1px;max-height:calc(100dvh - 310px);overflow-y:auto;border-radius:10px;border:1px solid rgba(220, 232, 238, 0.7);background:transparent;}
-.timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:transparent;border-bottom:1px solid rgba(237, 242, 245, 0.6)}
-.timetable-row strong{font-size:calc(18px * var(--font-scale))}.timetable-row span{font-size:calc(12px * var(--font-scale))}
+.timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:transparent;border-bottom:1px solid rgba(237,242,245,.6)}
+.timetable-row strong{font-size:calc(18px * var(--font-scale));color:#173d59;text-shadow:1.5px 1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px -1.5px 0 #fff,0 1.5px 0 #fff,0 -1.5px 0 #fff,-1.5px 0 0 #fff,1.5px 0 0 #fff}
+.timetable-row span{font-size:calc(12px * var(--font-scale));color:#183247;text-shadow:1px 1px 0 #fff,-1px 1px 0 #fff,1px -1px 0 #fff,-1px -1px 0 #fff}
 .empty-state{padding:16px;text-align:center;color:var(--muted);font-size:calc(12px * var(--font-scale))}
 
 .bottom-nav{height:var(--nav-h);flex:0 0 var(--nav-h);display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:5px 6px max(5px,env(safe-area-inset-bottom));background:rgba(255,255,255,.98);border-top:1px solid var(--line);z-index:10}
