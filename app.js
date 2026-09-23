@@ -1,420 +1,214 @@
-
-let currentView = 0;
-let currentNaviDirection = "toKumamoto";
-let currentTimetableDirection = "toKumamoto";
-let mapReady = false;
-let loadedTrains = [];
-
-const views = [...document.querySelectorAll(".view")];
-const navButtons = [...document.querySelectorAll(".nav-btn")];
-const splashScreen = document.getElementById("splashScreen");
-const sheet = document.getElementById("bottomSheet");
-const sheetBackdrop = document.getElementById("sheetBackdrop");
-
-function setView(index) {
-  currentView = Math.max(0, Math.min(3, index));
-  views.forEach((v, i) => v.classList.toggle("active", i === currentView));
-  navButtons.forEach((b, i) => b.classList.toggle("active", i === currentView));
-  document.body.dataset.view = String(currentView);
-  if (currentView === 2) setTimeout(() => { initMap(); renderMap(loadedTrains); }, 40);
+*{box-sizing:border-box}
+:root{
+  --ink:#183247;--muted:#6b7e8e;--line:#dbe6ee;--panel:#fff;
+  --blue:#1676bd;--blue-soft:#e9f5fc;--green:#138a63;--amber:#b66a00;--red:#c94545;
+  --nav-h:72px;--head-h:68px;
+  --font-scale: 1;
 }
-navButtons.forEach(btn => btn.addEventListener("click", () => setView(Number(btn.dataset.target))));
-document.getElementById("jumpTimetableBtn").addEventListener("click", () => setView(3));
+html,body{margin:0;width:100%;height:100%;font-family:"Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;color:var(--ink);background:#f3f7fa}
+body{overflow:hidden}
+button,select{font:inherit}
+button{color:inherit}
+button:focus-visible,select:focus-visible{outline:3px solid rgba(22,118,189,.3);outline-offset:2px}
+.app-shell{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:#f5f8fa}
 
-function trainIllustration(train) {
-  if (train.serviceKind === "ds" || /A列車/.test(train.serviceName || "")) {
-    return `<img src="./assets/atrain-photo.png" alt="A列車で行こう" class="mini-train-photo" />`;
-  }
-  return `<span class="mini-train-emoji" aria-hidden="true">🚃</span>`;
+/* --- ヘッダー領域 --- */
+.app-header{height:var(--head-h);flex:0 0 var(--head-h);display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);z-index:10;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.jr-logo-crop{width:48px;height:38px;display:flex;align-items:center;overflow:hidden;flex-shrink:0}
+.jr-logo-crop img{max-width:48px;max-height:34px;object-fit:contain}
+.eyebrow,.kicker{margin:0;font-size:calc(10px * var(--font-scale));font-weight:800;letter-spacing:.08em;color:#628094}
+h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#333333}
+.prototype-chip{font-size:calc(11px * var(--font-scale));font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#667b8a;flex-shrink:0}
+
+/* 文字サイズ変更ボタン */
+.Mojibtn{
+  padding:6px 10px;
+  font-size:calc(12px * var(--font-scale));
+  color:#ffffff;
+  background-color:#007bff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  white-space:nowrap;
+  flex-shrink:0;
+  font-weight:700;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
 }
+.Mojibtn:hover{background-color:#0056b3}
 
-function statusClass(train) {
-  if (isTerminalStopped(train)) return "arrived";
-  if ((train.delayMinutes || 0) > 0) return "delay";
-  return "normal";
-}
+/* --- メイン領域 --- */
+.app-main{flex:1;min-height:0;overflow:hidden}
+.view{display:none;width:100%;height:100%;overflow:hidden}
+.view.active{display:block}
+.view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
 
-function getVisibleOrder() {
-  return currentNaviDirection === "toKumamoto" ? [...stations].reverse() : [...stations];
-}
+/* ★背景画像を center bottom/cover に統一 */
+.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center bottom/cover fixed}
+.connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center bottom/cover}
+.map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center bottom/cover}
+.timetable-bg{background:linear-gradient(rgba(250,252,253,.3),rgba(250,252,253,.5)),url("./assets/bg-timetable.jpg") center bottom/cover}
 
-function matchingTimetableKey() {
-  return currentNaviDirection;
-}
+.sticky-tools{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0 10px;background:linear-gradient(#f8fbfd 72%,rgba(248,251,253,0))}
+.direction-switch{display:grid;grid-template-columns:1fr 1fr;background:rgba(233,240,245,.7);border-radius:13px;padding:3px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.seg-btn{border:0;background:transparent;border-radius:10px;padding:10px 8px;font-weight:800;font-size:14px}
+.seg-btn.active{background:rgba(255,255,255,.75);color:var(--blue);box-shadow:0 2px 7px rgba(20,54,74,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.station-focus-btn{border:1px solid var(--line);background:rgba(255,255,255,.6);border-radius:13px;padding:6px 10px;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:5px;align-items:center;min-width:92px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.station-focus-btn span:first-child{grid-column:1/3;font-size:9px;color:var(--muted)}
+.station-focus-btn strong{font-size:calc(14px * var(--font-scale))}
+.station-focus-btn span:last-child{font-size:calc(12px * var(--font-scale))}
 
-function renderNextTrains() {
-  const stationName = document.getElementById("favoriteStationName").textContent || "三角";
-  const data = timetableData[stationName]?.[matchingTimetableKey()] || [];
-  const items = data.slice(0, 3);
-  const wrap = document.getElementById("nextTrainStrip");
+/* メインカード群（すりガラス＋透過背景） */
+.next-trains-card,.route-panel,.connection-overview,.map-card,.timetable-box{background:rgba(255,255,255,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(219,230,238,.8);border-radius:18px;box-shadow:0 6px 22px rgba(39,67,86,.08);}
+.next-trains-card{padding:13px;margin-bottom:11px}
+.section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.section-heading.compact h2,.section-heading.compact h3{margin:1px 0 0;font-size:calc(17px * var(--font-scale));}
+.section-heading.route-heading h2{margin:1px 0 0;font-size:calc(19px * var(--font-scale))}
+.text-btn{border:0;background:transparent;color:var(--blue);font-weight:800;font-size:calc(12px * var(--font-scale));padding:8px}
+.next-train-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
 
-  if (!items.length) {
-    wrap.innerHTML = `<div class="empty-state">この方面の列車はありません。</div>`;
-    return;
-  }
-  wrap.innerHTML = items.map(([time, kind], i) => `
-    <button type="button" class="next-train-card" data-time="${time}" data-kind="${kind}">
-      <span class="next-order">${i + 1}</span>
-      <strong>${time}</strong>
-      <span>${kind}</span>
-      <small>${currentNaviDirection === "toKumamoto" ? "熊本方面" : "三角方面"}</small>
-    </button>
-  `).join("");
-}
+/* カード内の子要素 */
+.next-train-card{position:relative;border:1px solid rgba(220,231,239,.8);background:rgba(255,255,255,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:13px;min-width:0;padding:9px 5px;text-align:center}
+.next-train-card strong{display:block;font-size:calc(19px * var(--font-scale))}
+.next-train-card span:not(.next-order){display:block;font-size:calc(11px * var(--font-scale));font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.next-train-card small{font-size:calc(9px * var(--font-scale));color:var(--muted)}
+.next-order{position:absolute;left:5px;top:5px;width:17px;height:17px;border-radius:50%;background:#edf5fa;color:var(--blue);font-size:calc(10px * var(--font-scale));font-weight:900;display:grid;place-items:center}
+.route-panel{padding:14px 11px;margin-bottom:6px}
+.route-help{font-size:calc(11px * var(--font-scale));color:var(--muted);margin:7px 0 12px}
+.live-badge{font-size:calc(10px * var(--font-scale));color:var(--green);font-weight:800;display:flex;align-items:center;gap:5px}
+.live-badge i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(19,138,99,.1)}
 
-function trainPlacement(train, orderedStations) {
-  const currentIndex = orderedStations.findIndex(s => s.name === train.currentStation);
-  const nextIndex = orderedStations.findIndex(s => s.name === train.nextStation);
-  if (currentIndex < 0) return null;
-  if (isTerminalStopped(train) || nextIndex < 0 || currentIndex === nextIndex) {
-    return { stationIndex: currentIndex, progress: 0 };
-  }
-  // routePositionIndex は熊本→三角の順。表示順に合わせて割合へ変換。
-  const base = train.positionIndex;
-  const displayPos = currentNaviDirection === "toKumamoto"
-    ? (stations.length - 1) - base
-    : base;
-  const nearest = Math.floor(displayPos);
-  return { stationIndex: nearest, progress: Math.max(0.12, Math.min(0.88, displayPos - nearest)) };
-}
+.vertical-route{padding:2px 1px 10px}
+.station-row,.train-on-route{width:100%;border:0;background:transparent;display:grid;grid-template-columns:42px 1fr;text-align:left;padding:0;position:relative}
+.station-row{min-height:58px}
+.station-axis{position:relative;display:flex;justify-content:center}
+.station-dot{position:absolute;top:14px;width:16px;height:16px;border:4px solid var(--blue);border-radius:50%;background:rgba(255,255,255,.8);z-index:2}
+.station-line{position:absolute;top:28px;bottom:-31px;width:5px;border-radius:5px;background:linear-gradient(var(--blue),#73b4dc)}
+.station-row.hub .station-dot{width:22px;height:22px;top:11px;border-color:#123f67;box-shadow:0 0 0 5px rgba(22,118,189,.12)}
+.station-copy{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 6px 8px 0;border-bottom:1px solid rgba(219,230,238,.72)}
+.station-copy strong{font-size:calc(16px * var(--font-scale))}
+.station-copy small{font-size:calc(11px * var(--font-scale));color:var(--blue);font-weight:700;text-align:right}
+.station-copy b{font-size:calc(18px * var(--font-scale))}
+.train-on-route{margin:-3px 0 8px;min-height:80px;align-items:center}
+.train-axis-icon{justify-self:center;width:34px;height:34px;border-radius:12px;background:#ffd25c;border:2px solid #26495e;display:grid;place-items:center;font-size:18px;z-index:3;box-shadow:0 3px 8px rgba(30,60,80,.14)}
+.train-on-route.ds .train-axis-icon{background:#172835;color:#fff}
 
-function trainTimeText(train) {
-  if (isTerminalStopped(train)) return `${train.currentStation} 終点到着`;
-  const time = nextTimeValue(train);
-  return `${train.nextStation} ${time}`;
-}
+/* 走行中列車カード */
+.train-route-card{display:block;background:rgba(248,251,253,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid #d9e6ee;border-radius:14px;padding:9px 10px;margin-right:2px}
+.train-route-top{display:flex;align-items:center;gap:6px;min-width:0}
+.train-route-top strong{font-size:calc(14px * var(--font-scale))}
+.train-route-top em{font-style:normal;font-size:calc(10px * var(--font-scale));color:#825f00;background:rgba(255,243,201,.8);border-radius:999px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.train-route-top b{margin-left:auto;font-size:calc(10px * var(--font-scale));border-radius:999px;padding:3px 7px}
+.normal{color:var(--green)!important}.delay{color:var(--red)!important}.arrived{color:#627786!important}
+.train-route-time{display:block;font-size:calc(18px * var(--font-scale));font-weight:900;color:#173d59;margin-top:3px}
+.train-route-card small{display:block;color:var(--muted);font-size:calc(10px * var(--font-scale));margin-top:2px}
+.train-on-route.stopped .train-axis-icon{background:#e7edf1}
 
-function renderVerticalRoute(trains) {
-  const route = document.getElementById("verticalRoute");
-  const ordered = getVisibleOrder();
-  const moving = trains.filter(t => {
-    if (currentNaviDirection === "toKumamoto") return t.direction === "熊本方面" || isTerminalStopped(t);
-    return t.direction === "三角方面";
-  });
-
-  let html = "";
-  ordered.forEach((station, i) => {
-    const isKumamoto = station.name === "熊本";
-    const hasConnection = Boolean(connectionSamples[station.name]);
-
-    html += `
-      <button type="button" class="station-row ${isKumamoto ? "hub" : ""}" data-station="${station.name}">
-        <span class="station-axis">
-          <i class="station-dot"></i>
-          ${i < ordered.length - 1 ? `<i class="station-line"></i>` : ""}
-        </span>
-        <span class="station-copy">
-          <strong>${station.name}</strong>
-          ${hasConnection ? `<small>${isKumamoto ? "接続列車を見る" : "乗換情報あり"} <b>›</b></small>` : `<small>発車時刻を見る <b>›</b></small>`}
-        </span>
-      </button>
-    `;
-
-    if (i < ordered.length - 1) {
-      const between = moving.filter(t => {
-        const p = trainPlacement(t, ordered);
-        return p && p.stationIndex === i && !isTerminalStopped(t);
-      });
-      between.forEach(t => {
-        html += `
-          <button type="button" class="train-on-route ${t.serviceKind === "ds" ? "ds" : ""}" data-train="${t.id}">
-            <span class="train-axis-icon">🚃</span>
-            <span class="train-route-card">
-              <span class="train-route-top">
-                <strong>${t.id}</strong>
-                ${t.serviceName ? `<em>${t.serviceName}</em>` : ""}
-                <b class="${statusClass(t)}">${statusText(t)}</b>
-              </span>
-              <span class="train-route-time">${trainTimeText(t)}</span>
-              <small>${locationText(t)}</small>
-            </span>
-          </button>
-        `;
-      });
-    }
-
-    const atStation = moving.filter(t => isTerminalStopped(t) && t.currentStation === station.name);
-    atStation.forEach(t => {
-      html += `
-        <button type="button" class="train-on-route stopped" data-train="${t.id}">
-          <span class="train-axis-icon">🚃</span>
-          <span class="train-route-card">
-            <span class="train-route-top">
-              <strong>${t.id}</strong><b class="arrived">終点到着</b>
-            </span>
-            <span class="train-route-time">${t.currentStation}駅</span>
-            <small>この列車の表示は正式運用時の条件に合わせて調整します。</small>
-          </span>
-        </button>
-      `;
-    });
-  });
-  route.innerHTML = html;
-
-  route.querySelectorAll("[data-station]").forEach(btn =>
-    btn.addEventListener("click", () => openStationSheet(btn.dataset.station))
-  );
-  route.querySelectorAll("[data-train]").forEach(btn =>
-    btn.addEventListener("click", () => openTrainSheet(btn.dataset.train))
-  );
+/* ★２，３，４ページ目の上部タイトル文章（半透明白枠デザイン） */
+.page-title {
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(219, 230, 238, 0.8);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(39, 67, 86, 0.06);
 }
 
-function openSheet({kicker, title, body}) {
-  document.getElementById("sheetKicker").textContent = kicker;
-  document.getElementById("sheetTitle").textContent = title;
-  document.getElementById("sheetBody").innerHTML = body;
-  sheet.hidden = false;
-  sheetBackdrop.hidden = false;
-  requestAnimationFrame(() => {
-    sheet.classList.add("open");
-    sheetBackdrop.classList.add("open");
-  });
+.page-title h2 {
+  font-size: calc(23px * var(--font-scale));
+  margin: 0 0 4px 0;
+  color: #173d59;
 }
 
-function closeSheet() {
-  sheet.classList.remove("open");
-  sheetBackdrop.classList.remove("open");
-  setTimeout(() => {
-    sheet.hidden = true;
-    sheetBackdrop.hidden = true;
-  }, 180);
-}
-document.getElementById("sheetClose").addEventListener("click", closeSheet);
-sheetBackdrop.addEventListener("click", closeSheet);
-
-function connectionCards(stationName) {
-  const items = connectionSamples[stationName] || [];
-  if (!items.length) return "";
-  return `
-    <div class="sheet-section-title">つながる列車 <span>サンプル</span></div>
-    <div class="connection-list compact">
-      ${items.map(c => `
-        <div class="connection-item">
-          <strong>${c.time}</strong>
-          <div><b>${c.line}</b><span>${c.destination}</span></div>
-          <small>乗換 ${c.transferMinutes}分</small>
-        </div>
-      `).join("")}
-    </div>
-  `;
+.page-title p {
+  font-size: calc(12px * var(--font-scale));
+  color: #4f6475;
+  line-height: 1.5;
+  margin: 0;
 }
 
-function stationDepartures(stationName) {
-  const key = currentNaviDirection;
-  const rows = (timetableData[stationName]?.[key] || []).slice(0, 4);
-  if (!rows.length) return `<div class="empty-state">この方面の発車時刻はありません。</div>`;
-  return `
-    <div class="sheet-section-title">この駅からの次の列車</div>
-    <div class="departure-list">
-      ${rows.map(([time, kind]) => `<div><strong>${time}</strong><span>${kind}</span></div>`).join("")}
-    </div>
-  `;
+.connection-overview{padding:16px}
+.arrival-card{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;background:rgba(245,251,253,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid #d9eaf5;border-radius:14px;padding:12px}
+.arrival-card .mini-label{grid-column:1/3;font-size:10px;color:var(--muted)}
+.arrival-card strong{font-size:calc(19px * var(--font-scale))}
+.status-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 9px;background:rgba(238,248,244,.8);font-size:11px;font-weight:900}
+.connection-arrow{text-align:center;font-size:22px;color:#7290a4;padding:5px}
+.connection-list{display:grid;gap:8px;margin-top:10px}
+
+/* 乗り継ぎリストアイテム */
+.connection-item{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:8px;border:1px solid #dbe6ee;border-radius:12px;background:rgba(255,255,255,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:10px}
+.connection-item.large{grid-template-columns:62px 1fr auto;padding:12px}
+.connection-item>strong{font-size:calc(18px * var(--font-scale));color:#173d59}
+.connection-item div{display:grid;gap:2px}
+.connection-item div b{font-size:calc(13px * var(--font-scale))}.connection-item div span{font-size:11px;color:var(--muted)}
+.connection-item small{font-size:calc(10px * var(--font-scale));color:var(--blue);font-weight:800}
+.prototype-note{margin-top:12px;padding:12px;border-radius:13px;background:rgba(255,247,218,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;line-height:1.5;display:grid;gap:4px}
+.prototype-note strong{color:#8a6500}
+
+.map-card{overflow:hidden;padding:5px;min-height:430px}
+.svg-route-map{width:100%;height:auto;min-height:420px;display:block}
+.svg-route-halo{fill:none;stroke:white;stroke-width:11;stroke-linecap:round;stroke-linejoin:round}
+.svg-route-line{fill:none;stroke:var(--blue);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round}
+.svg-station circle{fill:rgba(255,255,255,.8);stroke:#0f4d7a;stroke-width:3}
+.svg-station text{font-size:calc(13px * var(--font-scale));font-weight:800;fill:#17324a;paint-order:stroke;stroke:white;stroke-width:4px}
+.svg-train-circle{fill:#ffd25c;stroke:#173d59;stroke-width:2}.svg-train text{font-size:calc(17px * var(--font-scale))}
+.svg-train-label-bg{fill:rgba(255,255,255,.75);stroke:#a9c9dd}.svg-train-label{font-size:calc(11px * var(--font-scale));font-weight:800;fill:#17324a}
+.footnote{font-size:calc(10px * var(--font-scale));color:var(--muted);line-height:1.5;margin:8px 4px}
+
+.timetable-box{padding:14px;}
+.timetable-box label{display:block;font-size:calc(11px * var(--font-scale));font-weight:800;margin-bottom:5px;}
+
+/* 時刻表セレクトボックス */
+.timetable-box select{width:100%;height:44px;border:1px solid #cbdbe6;border-radius:11px;background:rgba(255,255,255,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0 10px;font-size:calc(16px * var(--font-scale));}
+.direction-tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(234,241,245,.6);border-radius:12px;padding:3px;margin:10px 0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.direction-btn{border:0;background:transparent;border-radius:99px;padding:9px;font-weight:800}
+.direction-btn.active{background:rgba(255,255,255,.75);color:var(--blue);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+
+/* 時刻表リスト */
+.timetable-list{display:grid;gap:1px;max-height:calc(100dvh - 310px);overflow-y:auto;border-radius:10px;border:1px solid rgba(220, 232, 238, 0.7);background:transparent;}
+.timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:transparent;border-bottom:1px solid rgba(237,242,245,.6)}
+.timetable-row strong{font-size:calc(18px * var(--font-scale));color:#173d59;text-shadow:1.5px 1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px -1.5px 0 #fff,0 1.5px 0 #fff,0 -1.5px 0 #fff,-1.5px 0 0 #fff,1.5px 0 0 #fff}
+.timetable-row span{font-size:calc(12px * var(--font-scale));color:#183247;text-shadow:1px 1px 0 #fff,-1px 1px 0 #fff,1px -1px 0 #fff,-1px -1px 0 #fff}
+.empty-state{padding:16px;text-align:center;color:var(--muted);font-size:calc(12px * var(--font-scale))}
+
+.bottom-nav{height:var(--nav-h);flex:0 0 var(--nav-h);display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:5px 6px max(5px,env(safe-area-inset-bottom));background:rgba(255,255,255,.98);border-top:1px solid var(--line);z-index:10}
+.nav-btn{border:0;background:transparent;border-radius:13px;min-height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:calc(10px * var(--font-scale));font-weight:800;color:#6f8190}
+.nav-btn.active{background:var(--blue-soft);color:var(--blue)}
+.nav-icon{font-size:calc(20px * var(--font-scale));line-height:1}
+
+.splash-screen{position:fixed;inset:0;z-index:100;background:white;display:grid;place-items:center;transition:opacity .35s ease}
+.splash-screen.hide{opacity:0;pointer-events:none}
+.splash-inner{text-align:center;padding:24px}
+.splash-logo{width:min(44vw,190px);height:auto}
+.splash-title{font-size:calc(22px * var(--font-scale));font-weight:900;margin:14px 0 4px}.splash-subtitle{font-size:calc(12px * var(--font-scale));color:var(--muted);margin:0}
+
+.sheet-backdrop{position:fixed;inset:0;background:rgba(14,34,49,.35);z-index:50;opacity:0;transition:.18s}
+.sheet-backdrop.open{opacity:1}
+.bottom-sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:min(74dvh,620px);overflow:hidden;background:white;border-radius:22px 22px 0 0;box-shadow:0 -10px 35px rgba(22,47,64,.18);transform:translateY(102%);transition:transform .2s ease}
+.bottom-sheet.open{transform:translateY(0)}
+.sheet-handle{width:42px;height:5px;border-radius:99px;background:#cad5dd;margin:8px auto 3px}
+.sheet-head{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 15px 10px;border-bottom:1px solid #e6edf2}
+.sheet-head h2{margin:1px 0 0;font-size:calc(21px * var(--font-scale))}
+.sheet-close{width:42px;height:42px;border:0;border-radius:50%;background:#eef3f6;font-size:25px}
+.sheet-body{max-height:calc(min(74dvh,620px) - 80px);overflow-y:auto;padding:14px 15px 20px;overscroll-behavior:contain}
+.sheet-section-title{font-size:calc(12px * var(--font-scale));font-weight:900;margin:12px 0 7px;display:flex;justify-content:space-between}
+.sheet-section-title span{font-size:calc(9px * var(--font-scale));color:var(--muted)}
+.sheet-callout{display:grid;gap:4px;background:#eef8ff;border-radius:13px;padding:12px;font-size:calc(12px * var(--font-scale));line-height:1.5}
+.sheet-callout.subtle{background:#f5f8fa;margin-top:12px}
+.departure-list{display:grid;border:1px solid #e0e9ef;border-radius:12px;overflow:hidden}
+.departure-list div{display:grid;grid-template-columns:72px 1fr;padding:10px 12px;border-bottom:1px solid #edf2f5}
+.departure-list div:last-child{border-bottom:0}.departure-list strong{font-size:calc(17px * var(--font-scale))}.departure-list span{font-size:calc(12px * var(--font-scale))}
+.primary-sheet-btn{width:100%;border:0;border-radius:13px;background:var(--blue);color:white;font-weight:900;padding:13px;margin-top:13px}
+.train-sheet-hero{display:flex;gap:11px;align-items:center}
+.train-sheet-hero .mini-train-photo{width:92px;height:58px;border-radius:10px;object-fit:cover}
+.mini-train-emoji{font-size:calc(34px * var(--font-scale))}
+.train-sheet-hero>div{display:grid;gap:5px}.train-sheet-hero>div>strong{font-size:16px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
+.detail-grid div{background:#f7fafc;border-radius:11px;padding:10px;display:grid;gap:3px}
+.detail-grid small{color:var(--muted);font-size:10px}.detail-grid strong{font-size:calc(14px * var(--font-scale))}
+
+@media (min-width:700px){
+  .app-shell{max-width:520px;margin:0 auto;border-left:1px solid #dbe6ee;border-right:1px solid #dbe6ee}
 }
-
-function openStationSheet(stationName) {
-  const special = stationName === "熊本";
-  openSheet({
-    kicker: special ? "CONNECTION HUB" : "STATION",
-    title: `${stationName}駅`,
-    body: `
-      ${special ? `<div class="sheet-callout"><strong>熊本駅は「終点」ではなく、その先への入口。</strong><span>三角線の到着予定から、接続できる列車まで同じ画面で確認する想定です。</span></div>` : ""}
-      ${stationDepartures(stationName)}
-      ${connectionCards(stationName)}
-      ${special ? `<button type="button" class="primary-sheet-btn" id="openConnectionView">接続画面を開く</button>` : ""}
-    `
-  });
-  const c = document.getElementById("openConnectionView");
-  if (c) c.addEventListener("click", () => { closeSheet(); setView(1); });
-}
-
-function openTrainSheet(trainId) {
-  const t = loadedTrains.find(x => x.id === trainId);
-  if (!t) return;
-  openSheet({
-    kicker: "TRAIN",
-    title: `${t.id}${t.serviceName ? ` ${t.serviceName}` : ""}`,
-    body: `
-      <div class="train-sheet-hero">
-        ${trainIllustration(t)}
-        <div>
-          <span class="status-pill ${statusClass(t)}">${statusText(t)}</span>
-          <strong>${locationText(t)}</strong>
-        </div>
-      </div>
-      <div class="detail-grid">
-        <div><small>方面</small><strong>${t.direction}</strong></div>
-        <div><small>次駅</small><strong>${isTerminalStopped(t) ? "—" : t.nextStation}</strong></div>
-        <div><small>次駅到着予定</small><strong>${isTerminalStopped(t) ? "—" : nextTimeValue(t)}</strong></div>
-        <div><small>列車番号</small><strong>${t.id}</strong></div>
-      </div>
-      <div class="sheet-callout subtle">
-        <strong>時刻と位置を同時に表示</strong>
-        <span>「今どこ？」と「何時に来る？」を別画面で確認しなくて済む設計です。</span>
-      </div>
-    `
-  });
-}
-
-function renderConnectionView() {
-  const list = document.getElementById("connectionList");
-  list.innerHTML = (connectionSamples["熊本"] || []).map(c => `
-    <article class="connection-item large">
-      <strong>${c.time}</strong>
-      <div>
-        <b>${c.line}</b>
-        <span>${c.destination}</span>
-      </div>
-      <small>乗換 ${c.transferMinutes}分</small>
-    </article>
-  `).join("");
-}
-
-function getRoutePoints() {
-  if (Array.isArray(lightweightRouteSegments) && lightweightRouteSegments.length) {
-    const points = [];
-    lightweightRouteSegments.forEach((seg, segIndex) => {
-      if (!seg || !Array.isArray(seg.points)) return;
-      seg.points.forEach((p, i) => {
-        if (segIndex > 0 && i === 0) return;
-        if (Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1])) points.push(p);
-      });
-    });
-    if (points.length > 1) return points;
-  }
-  return stations.map(s => [s.lat, s.lng]);
-}
-
-function mapProjection() {
-  const route = getRoutePoints();
-  const all = route.concat(stations.map(s => [s.lat, s.lng]));
-  const lats = all.map(p => p[0]), lngs = all.map(p => p[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  const pad = 34, width = 720, height = 500;
-  const project = (lat, lng) => [
-    pad + ((lng - minLng) / Math.max(.000001, maxLng - minLng)) * (width - pad * 2),
-    pad + ((maxLat - lat) / Math.max(.000001, maxLat - minLat)) * (height - pad * 2)
-  ];
-  return {width, height, project};
-}
-
-function initMap() {
-  const mapEl = document.getElementById("map");
-  if (!mapEl) return;
-  const {width, height, project} = mapProjection();
-  const routePoints = getRoutePoints().map(p => project(p[0], p[1]).join(",")).join(" ");
-  const stationSvg = stations.map(s => {
-    const [x,y] = project(s.lat, s.lng);
-    const anchor = x > width * .72 ? "end" : "start";
-    return `<g class="svg-station"><circle cx="${x}" cy="${y}" r="5.5"></circle>
-      <text x="${x + (anchor === "end" ? -9 : 9)}" y="${y + 15}" text-anchor="${anchor}">${s.name}</text></g>`;
-  }).join("");
-  mapEl.innerHTML = `<svg id="routeSvgMap" class="svg-route-map" viewBox="0 0 ${width} ${height}" aria-label="熊本から三角までの路線図">
-    <polyline class="svg-route-halo" points="${routePoints}"></polyline>
-    <polyline class="svg-route-line" points="${routePoints}"></polyline>
-    ${stationSvg}<g id="svgTrainLayer"></g></svg>`;
-  mapReady = true;
-}
-
-function renderMap(trains) {
-  if (!mapReady) initMap();
-  const layer = document.getElementById("svgTrainLayer");
-  if (!layer) return;
-  const {project} = mapProjection();
-  layer.innerHTML = trains.map(t => {
-    const [x,y] = project(t.lat, t.lng);
-    return `<g class="svg-train" transform="translate(${x} ${y})">
-      <circle r="15" class="svg-train-circle"></circle>
-      <text x="0" y="5" text-anchor="middle">🚃</text>
-      <rect class="svg-train-label-bg" x="-43" y="-42" width="86" height="22" rx="11"></rect>
-      <text class="svg-train-label" x="0" y="-27" text-anchor="middle">${t.id} ${statusText(t)}</text>
-    </g>`;
-  }).join("");
-}
-
-function initTimetable() {
-  const select = document.getElementById("stationSelect");
-  select.innerHTML = stations.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
-  select.value = "三角";
-  select.addEventListener("change", renderTimetable);
-  document.getElementById("toMisumiBtn").addEventListener("click", () => {
-    currentTimetableDirection = "toMisumi"; syncDirectionButtons(); renderTimetable();
-  });
-  document.getElementById("toKumamotoBtn").addEventListener("click", () => {
-    currentTimetableDirection = "toKumamoto"; syncDirectionButtons(); renderTimetable();
-  });
-  syncDirectionButtons();
-  renderTimetable();
-}
-
-function syncDirectionButtons() {
-  document.getElementById("toMisumiBtn").classList.toggle("active", currentTimetableDirection === "toMisumi");
-  document.getElementById("toKumamotoBtn").classList.toggle("active", currentTimetableDirection === "toKumamoto");
-}
-
-function renderTimetable() {
-  const station = document.getElementById("stationSelect").value;
-  const rows = timetableData[station]?.[currentTimetableDirection] || [];
-  document.getElementById("timetable").innerHTML = rows.length
-    ? `<div class="timetable-list">${rows.map(([time,kind]) => `<div class="timetable-row"><strong>${time}</strong><span>${kind}</span></div>`).join("")}</div>`
-    : `<div class="empty-state">この方面の列車はありません。</div>`;
-}
-
-document.querySelectorAll(".seg-btn").forEach(btn => btn.addEventListener("click", () => {
-  currentNaviDirection = btn.dataset.direction;
-  document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b === btn));
-  renderNextTrains();
-  renderVerticalRoute(loadedTrains);
-}));
-
-document.getElementById("favoriteStationBtn").addEventListener("click", () => openStationSheet(document.getElementById("favoriteStationName").textContent));
-
-async function init() {
-  loadedTrains = await loadTrainData();
-  renderNextTrains();
-  renderVerticalRoute(loadedTrains);
-  renderConnectionView();
-  initMap();
-  renderMap(loadedTrains);
-  initTimetable();
-
-  setTimeout(() => {
-    splashScreen.classList.add("hide");
-    document.body.classList.remove("splash-active");
-    setTimeout(() => splashScreen.remove(), 350);
-  }, 1800);
-}
-
-init().catch(err => {
-  console.error(err);
-  document.body.classList.remove("splash-active");
-});
-
-// 切り替えるサイズとボタンの表示テキストのリスト
-const fontScales = [
-  { scale: 1.0,  label: '文字サイズ: 標準' },
-  { scale: 1.2,  label: '文字サイズ: 大' },
-  { scale: 0.85, label: '文字サイズ: 小' }
-];
-
-let currentScaleIndex = 0; // 初期状態（0 = 標準）
-
-// ボタンとクリックイベントの設定
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('Mojibtn');
-
-  if (btn) {
-    btn.addEventListener('click', () => {
-      // 次のサイズにインデックスを進める（最後までいったら0に戻る）
-      currentScaleIndex = (currentScaleIndex + 1) % fontScales.length;
-
-      const current = fontScales[currentScaleIndex];
-
-      // 1. CSS変数を書き換えて文字サイズを変更
-      document.documentElement.style.setProperty('--font-scale', current.scale);
-
-      // 2. ボタンの表示テキストを変更
-      btn.textContent = current.label;
-    });
-  }
-});
