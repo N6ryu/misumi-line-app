@@ -44,7 +44,7 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 .view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
 
 /* 背景グラデーションの透過度調整 */
-.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center bottom/100% auto}
+.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center bottom/100% auto fixed}
 .connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center bottom/100% auto}
 .map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center bottom/100% auto}
 .timetable-bg{background:linear-gradient(rgba(250,252,253,.3),rgba(250,252,253,.5)),url("./assets/bg-timetable.jpg") center bottom/100% auto}
