@@ -44,10 +44,10 @@ h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-spac
 .view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
 
 /* 背景グラデーションの透過度調整 */
-.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center top/cover fixed}
-.connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center/cover}
-.map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center/cover}
-.timetable-bg{background:linear-gradient(rgba(250,252,253,.3),rgba(250,252,253,.5)),url("./assets/bg-timetable.jpg") center/cover}
+.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center bottom/cover fixed}
+.connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center bottom/cover}
+.map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center bottom/cover}
+.timetable-bg{background:linear-gradient(rgba(250,252,253,.3),rgba(250,252,253,.5)),url("./assets/bg-timetable.jpg") center bottom/cover}
 
 .sticky-tools{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0 10px;background:linear-gradient(#f8fbfd 72%,rgba(248,251,253,0))}
 .direction-switch{display:grid;grid-template-columns:1fr 1fr;background:rgba(233,240,245,.7);border-radius:13px;padding:3px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
