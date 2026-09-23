@@ -393,7 +393,7 @@ init().catch(err => {
 // 切り替えるサイズとボタンの表示テキストのリスト
 const fontScales = [
   { scale: 1.0,  label: '文字サイズ: 標準' },
-  { scale: 1.4,  label: '文字サイズ: 大' },
+  { scale: 1.2,  label: '文字サイズ: 大' },
   { scale: 0.85, label: '文字サイズ: 小' }
 ];
 
