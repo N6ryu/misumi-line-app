@@ -1,29 +1,33 @@
+// ==========================================================================
+// 状態管理変数
+// ==========================================================================
 let currentView = 0;
 let currentNaviDirection = "toKumamoto";
 let currentTimetableDirection = "toKumamoto";
 let mapReady = false;
 let loadedTrains = [];
 
-// 要素の取得
-const viewsWrapper = document.querySelector(".views-wrapper");
-const navButtons = [...document.querySelectorAll(".nav-btn")];
-const splashScreen = document.getElementById("splashScreen");
-const sheet = document.getElementById("bottomSheet");
-const sheetBackdrop = document.getElementById("sheetBackdrop");
+// DOM要素の保持
+let viewsWrapper, navButtons, splashScreen, sheet, sheetBackdrop;
 
-// --------------------------------------------------
+// ==========================================================================
 // 1. 画面切り替え（スライド & ナビ制御）
-// --------------------------------------------------
+// ==========================================================================
 function setView(index) {
   currentView = Math.max(0, Math.min(3, index));
 
-  const wrapper = document.querySelector(".views-wrapper");
-  if (wrapper) {
-    wrapper.style.transform = `translateX(-${currentView * 25}%)`;
+  if (viewsWrapper) {
+    viewsWrapper.style.transform = `translateX(-${currentView * 25}%)`;
   }
 
-  const btns = document.querySelectorAll(".nav-btn");
-  btns.forEach((b, i) => b.classList.toggle("active", i === currentView));
+  // ナビゲーションボタンのアクティブ状態切替
+  if (navButtons && navButtons.length) {
+    navButtons.forEach((btn) => {
+      const target = Number(btn.dataset.target);
+      btn.classList.toggle("active", target === currentView);
+    });
+  }
+
   document.body.dataset.view = String(currentView);
 
   // 地図タブ（index: 2）を開いたときにマップを初期化＆描画
@@ -31,15 +35,14 @@ function setView(index) {
     setTimeout(() => {
       initMap();
       renderMap(loadedTrains);
-    }, 50);
+    }, 100);
   }
 }
 
-// --------------------------------------------------
-// 2. 地図描画（route-geometry.js を活用したSVG路線図）
-// --------------------------------------------------
+// ==========================================================================
+// 2. 地図描画（SVG路線図 & リアルタイム位置）
+// ==========================================================================
 function getRoutePoints() {
-  // route-geometry.js の lightweightRouteSegments を参照
   if (typeof lightweightRouteSegments !== "undefined" && Array.isArray(lightweightRouteSegments) && lightweightRouteSegments.length) {
     const points = [];
     lightweightRouteSegments.forEach((seg, segIndex) => {
@@ -53,7 +56,6 @@ function getRoutePoints() {
     });
     if (points.length > 1) return points;
   }
-  // フォールバック：stations データより座標を抽出
   if (typeof stations !== "undefined") {
     return stations.map(s => [s.lat, s.lng]);
   }
@@ -65,7 +67,7 @@ function mapProjection() {
   const stationList = typeof stations !== "undefined" ? stations : [];
   const all = route.concat(stationList.map(s => [s.lat, s.lng]));
   
-  if (!all.length) return { width: 720, height: 500, project: (lat, lng) => [0, 0] };
+  if (!all.length) return { width: 720, height: 500, project: () => [0, 0] };
 
   const lats = all.map(p => p[0]);
   const lngs = all.map(p => p[1]);
@@ -100,15 +102,15 @@ function initMap() {
     const textX = x + (isEnd ? -10 : 10);
     return `
       <g class="svg-station">
-        <circle cx="${x}" cy="${y}" r="6" fill="#1e293b" stroke="#ffffff" stroke-width="2"></circle>
-        <text x="${textX}" y="${y + 4}" text-anchor="${anchor}" font-size="12" font-weight="bold" fill="#334155">${s.name}</text>
+        <circle cx="${x}" cy="${y}" r="6"></circle>
+        <text x="${textX}" y="${y + 4}" text-anchor="${anchor}">${s.name}</text>
       </g>`;
   }).join("");
 
   mapEl.innerHTML = `
-    <svg id="routeSvgMap" class="svg-route-map" viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; background:#f8fafc; border-radius:12px;" aria-label="熊本から三角までの路線図">
-      <polyline points="${routePointsStr}" fill="none" stroke="#cbd5e1" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-      <polyline points="${routePointsStr}" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+    <svg id="routeSvgMap" class="svg-route-map" viewBox="0 0 ${width} ${height}" aria-label="熊本から三角までの路線図">
+      <polyline class="svg-route-halo" points="${routePointsStr}" />
+      <polyline class="svg-route-line" points="${routePointsStr}" />
       ${stationSvg}
       <g id="svgTrainLayer"></g>
     </svg>`;
@@ -127,17 +129,17 @@ function renderMap(trains) {
     const labelText = `${t.id} ${typeof statusText === "function" ? statusText(t) : (t.delayMinutes ? t.delayMinutes + "分遅れ" : "定刻")}`;
     return `
       <g class="svg-train" transform="translate(${x} ${y})">
-        <circle r="14" fill="#ef4444" stroke="#ffffff" stroke-width="2"></circle>
-        <text x="0" y="4" text-anchor="middle" font-size="12">🚃</text>
-        <rect x="-40" y="-38" width="80" height="20" rx="10" fill="#1e293b" opacity="0.85"></rect>
-        <text x="0" y="-24" text-anchor="middle" font-size="10" fill="#ffffff" font-weight="bold">${labelText}</text>
+        <circle class="svg-train-circle" r="14"></circle>
+        <text x="0" y="5" text-anchor="middle">🚃</text>
+        <rect class="svg-train-label-bg" x="-40" y="-38" width="80" height="20" rx="10"></rect>
+        <text class="svg-train-label" x="0" y="-24" text-anchor="middle">${labelText}</text>
       </g>`;
   }).join("");
 }
 
-// --------------------------------------------------
-// 3. 時刻表描画（mock-data.js の timetableData を参照）
-// --------------------------------------------------
+// ==========================================================================
+// 3. 時刻表描画
+// ==========================================================================
 function initTimetable() {
   const select = document.getElementById("stationSelect");
   if (!select) return;
@@ -184,31 +186,29 @@ function renderTimetable() {
   if (!select || !timetableEl) return;
 
   const stationName = select.value || "三角";
-  
-  // mock-data.js の timetableData から選択駅・方向の時刻表を取得
   const rows = (typeof timetableData !== "undefined" && timetableData[stationName])
     ? (timetableData[stationName][currentTimetableDirection] || [])
     : [];
 
   if (!rows.length) {
-    timetableEl.innerHTML = `<div class="empty-state" style="padding:20px; text-align:center; color:#64748b;">該当する列車データがありません。</div>`;
+    timetableEl.innerHTML = `<div class="empty-state">該当する列車データがありません。</div>`;
     return;
   }
 
   timetableEl.innerHTML = `
-    <div class="timetable-list" style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+    <div class="timetable-list">
       ${rows.map(([time, kind]) => `
-        <div class="timetable-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f1f5f9; border-radius:8px;">
-          <strong style="font-size:1.1rem; color:#0f172a;">${time}</strong>
-          <span style="font-size:0.9rem; color:#475569; background:#e2e8f0; padding:2px 8px; border-radius:4px;">${kind}</span>
+        <div class="timetable-row">
+          <strong>${time}</strong>
+          <span>${kind}</span>
         </div>
       `).join("")}
     </div>`;
 }
 
-// --------------------------------------------------
-// 4. その他の UI 補助機能
-// --------------------------------------------------
+// ==========================================================================
+// 4. その他の UI 補助機能（接近表示・路線図・乗り換え案内）
+// ==========================================================================
 function renderNextTrains() {
   if (typeof timetableData === "undefined") return;
   const stationName = document.getElementById("favoriteStationName")?.textContent || "三角";
@@ -262,12 +262,48 @@ function renderConnectionView() {
   `).join("");
 }
 
-// --------------------------------------------------
-// 5. DOMContentLoaded & 初期化
-// --------------------------------------------------
+// ==========================================================================
+// 5. ボトムシート制御
+// ==========================================================================
+function openBottomSheet(contentHtml) {
+  if (!sheet || !sheetBackdrop) return;
+  const body = document.getElementById("sheetBody");
+  if (body && contentHtml) body.innerHTML = contentHtml;
+
+  sheetBackdrop.hidden = false;
+  sheet.hidden = false;
+  
+  // トランジション適用のための遅延クラス付与
+  requestAnimationFrame(() => {
+    sheetBackdrop.classList.add("open");
+    sheet.classList.add("open");
+  });
+}
+
+function closeBottomSheet() {
+  if (!sheet || !sheetBackdrop) return;
+  sheetBackdrop.classList.remove("open");
+  sheet.classList.remove("open");
+
+  setTimeout(() => {
+    sheetBackdrop.hidden = true;
+    sheet.hidden = true;
+  }, 200);
+}
+
+// ==========================================================================
+// 6. DOMContentLoaded & アプリ初期化
+// ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  // ナビゲーションボタン
-  document.querySelectorAll(".nav-btn").forEach((btn, index) => {
+  // 主要要素の取得
+  viewsWrapper = document.querySelector(".views-wrapper");
+  navButtons = [...document.querySelectorAll(".nav-btn")];
+  splashScreen = document.getElementById("splashScreen");
+  sheet = document.getElementById("bottomSheet");
+  sheetBackdrop = document.getElementById("sheetBackdrop");
+
+  // ナビゲーションボタンのイベント登録
+  navButtons.forEach((btn, index) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       const target = btn.dataset.target !== undefined ? Number(btn.dataset.target) : index;
@@ -281,7 +317,12 @@ document.addEventListener("DOMContentLoaded", () => {
     jumpBtn.addEventListener("click", () => setView(3));
   }
 
-  // スワイプ操作
+  // ボトムシート閉じるボタン
+  const sheetCloseBtn = document.getElementById("sheetClose");
+  if (sheetCloseBtn) sheetCloseBtn.addEventListener("click", closeBottomSheet);
+  if (sheetBackdrop) sheetBackdrop.addEventListener("click", closeBottomSheet);
+
+  // タッチスワイプ操作による画面切り替え
   let startX = 0;
   const mainArea = document.querySelector(".app-main");
   if (mainArea) {
@@ -307,9 +348,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 文字サイズ変更機能
   const fontScales = [
-    { scale: 1.0, label: '文字サイズ: 標準' },
-    { scale: 1.2, label: '文字サイズ: 大' },
-    { scale: 0.85, label: '文字サイズ: 小' }
+    { scale: 1.0, label: '文字の大きさ' },
+    { scale: 1.18, label: '文字: 大' },
+    { scale: 0.88, label: '文字: 小' }
   ];
   let currentScaleIndex = 0;
   const mojiBtn = document.getElementById("Mojibtn");
@@ -322,6 +363,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// アプリ全体の非同期データロード＆起動処理
 async function init() {
   try {
     if (typeof loadTrainData === "function") {
@@ -338,6 +380,7 @@ async function init() {
   renderMap(loadedTrains);
   initTimetable();
 
+  // スプラッシュ画面を非表示化
   if (splashScreen) {
     setTimeout(() => {
       splashScreen.classList.add("hide");
