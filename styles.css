@@ -21,7 +21,7 @@ button:focus-visible,select:focus-visible{outline:3px solid rgba(22,118,189,.3);
 h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#333333}
 .prototype-chip{font-size:calc(11px * var(--font-scale));font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#667b8a;flex-shrink:0}
 
-/* h2共通：半透明白枠デザイン */
+/* ★各div内のh2共通：半透明白枠デザイン */
 h2 {
   display: inline-block;
   padding: 6px 14px;
@@ -69,33 +69,23 @@ h2 {
 }
 .Mojibtn:hover{background-color:#0056b3}
 
-/* --- メイン領域（横スライド・スワイプアニメーション構造） --- */
-.app-main {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
+/* --- メイン領域 --- */
+.app-main{flex:1;min-height:0;overflow:hidden}
+.view{
+  display:none;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  opacity:0;
+  transition:opacity 0.25s ease-in-out;
 }
-
-.views-wrapper {
-  display: flex;
-  width: 400%;
-  height: 100%;
-  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
+.view.active{
+  display:block;
+  opacity:1;
 }
-
-.view {
-  width: 25%;
-  height: 100%;
-  overflow: hidden;
-  opacity: 1;
-  flex-shrink: 0;
-}
-
 .view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
 
-/* 背景画像 */
+/* ★背景画像を center bottom/cover に統一 */
 .navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center bottom/cover fixed}
 .connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center bottom/cover}
 .map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center bottom/cover}
@@ -110,7 +100,7 @@ h2 {
 .station-focus-btn strong{font-size:calc(14px * var(--font-scale))}
 .station-focus-btn span:last-child{font-size:calc(12px * var(--font-scale))}
 
-/* カード類 */
+/* メインカード群（すりガラス＋透過背景） */
 .next-trains-card,.route-panel,.connection-overview,.map-card,.timetable-box{background:rgba(255,255,255,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(219,230,238,.8);border-radius:18px;box-shadow:0 6px 22px rgba(39,67,86,.08);}
 .next-trains-card{padding:13px;margin-bottom:11px}
 .section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
@@ -119,6 +109,7 @@ h2 {
 .text-btn{border:0;background:transparent;color:var(--blue);font-weight:800;font-size:calc(12px * var(--font-scale));padding:8px}
 .next-train-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
 
+/* カード内の子要素 */
 .next-train-card{position:relative;border:1px solid rgba(220,231,239,.8);background:rgba(255,255,255,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:13px;min-width:0;padding:9px 5px;text-align:center}
 .next-train-card strong{display:block;font-size:calc(19px * var(--font-scale))}
 .next-train-card span:not(.next-order){display:block;font-size:calc(11px * var(--font-scale));font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -144,6 +135,7 @@ h2 {
 .train-axis-icon{justify-self:center;width:34px;height:34px;border-radius:12px;background:#ffd25c;border:2px solid #26495e;display:grid;place-items:center;font-size:18px;z-index:3;box-shadow:0 3px 8px rgba(30,60,80,.14)}
 .train-on-route.ds .train-axis-icon{background:#172835;color:#fff}
 
+/* 走行中列車カード */
 .train-route-card{display:block;background:rgba(248,251,253,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid #d9e6ee;border-radius:14px;padding:9px 10px;margin-right:2px}
 .train-route-top{display:flex;align-items:center;gap:6px;min-width:0}
 .train-route-top strong{font-size:calc(14px * var(--font-scale))}
@@ -154,6 +146,7 @@ h2 {
 .train-route-card small{display:block;color:var(--muted);font-size:calc(10px * var(--font-scale));margin-top:2px}
 .train-on-route.stopped .train-axis-icon{background:#e7edf1}
 
+/* ２，３，４ページ目の上部タイトル文章エリア */
 .page-title {
   padding: 12px 14px;
   margin-bottom: 12px;
@@ -191,6 +184,7 @@ h2 {
 .connection-arrow{text-align:center;font-size:22px;color:#7290a4;padding:5px}
 .connection-list{display:grid;gap:8px;margin-top:10px}
 
+/* 乗り継ぎリストアイテム */
 .connection-item{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:8px;border:1px solid #dbe6ee;border-radius:12px;background:rgba(255,255,255,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:10px}
 .connection-item.large{grid-template-columns:62px 1fr auto;padding:12px}
 .connection-item>strong{font-size:calc(18px * var(--font-scale));color:#173d59}
@@ -212,12 +206,16 @@ h2 {
 
 .timetable-box{padding:14px;}
 .timetable-box label{display:block;font-size:calc(11px * var(--font-scale));font-weight:800;margin-bottom:5px;}
+
+/* 時刻表セレクトボックス */
 .timetable-box select{width:100%;height:44px;border:1px solid #cbdbe6;border-radius:11px;background:rgba(255,255,255,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0 10px;font-size:calc(16px * var(--font-scale));}
 
+/* 時刻表の方面切り替えタブ */
 .direction-tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(234,241,245,.6);border-radius:12px;padding:3px;margin:10px 0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .direction-btn{border:0;background:transparent;border-radius:99px;padding:8px 12px;font-size:calc(13px * var(--font-scale));font-weight:800;color:var(--muted);cursor:pointer;transition:background-color 0.2s, color 0.2s;}
 .direction-btn.active{background:rgba(255,255,255,.85);color:var(--blue);box-shadow:0 2px 6px rgba(20,54,74,.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 
+/* 時刻表リスト */
 .timetable-list{display:grid;gap:1px;max-height:calc(100dvh - 310px);overflow-y:auto;border-radius:10px;border:1px solid rgba(220, 232, 238, 0.7);background:transparent;}
 .timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:transparent;border-bottom:1px solid rgba(237,242,245,.6)}
 .timetable-row strong{font-size:calc(18px * var(--font-scale));color:#173d59;text-shadow:1.5px 1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px -1.5px 0 #fff,0 1.5px 0 #fff,0 -1.5px 0 #fff,-1.5px 0 0 #fff,1.5px 0 0 #fff}
@@ -229,14 +227,12 @@ h2 {
 .nav-btn.active{background:var(--blue-soft);color:var(--blue)}
 .nav-icon{font-size:calc(20px * var(--font-scale));line-height:1}
 
-/* スプラッシュ screen */
 .splash-screen{position:fixed;inset:0;z-index:100;background:white;display:grid;place-items:center;transition:opacity .35s ease, visibility .35s ease}
 .splash-screen.hide{opacity:0;visibility:hidden;pointer-events:none}
 .splash-inner{text-align:center;padding:24px}
 .splash-logo{width:min(44vw,190px);height:auto}
 .splash-title{font-size:calc(22px * var(--font-scale));font-weight:900;margin:14px 0 4px}.splash-subtitle{font-size:calc(12px * var(--font-scale));color:var(--muted);margin:0}
 
-/* ボトムシート */
 .sheet-backdrop{position:fixed;inset:0;background:rgba(14,34,49,.35);z-index:50;opacity:0;transition:.18s}
 .sheet-backdrop.open{opacity:1}
 .bottom-sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:min(74dvh,620px);overflow:hidden;background:white;border-radius:22px 22px 0 0;box-shadow:0 -10px 35px rgba(22,47,64,.18);transform:translateY(102%);transition:transform .2s ease}
