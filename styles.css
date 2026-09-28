@@ -1,275 +1,243 @@
-*{box-sizing:border-box}
-:root{
-  --ink:#183247;--muted:#6b7e8e;--line:#dbe6ee;--panel:#fff;
-  --blue:#1676bd;--blue-soft:#e9f5fc;--green:#138a63;--amber:#b66a00;--red:#c94545;
-  --nav-h:72px;--head-h:68px;
-  --font-scale: 1;
-}
-html,body{margin:0;width:100%;height:100%;font-family:"Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;color:var(--ink);background:#f3f7fa}
-body{overflow:hidden}
-button,select{font:inherit}
-button{color:inherit}
-button:focus-visible,select:focus-visible{outline:3px solid rgba(22,118,189,.3);outline-offset:2px}
-.app-shell{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:#f5f8fa}
-
-/* --- ヘッダー領域 --- */
-.app-header{height:var(--head-h);flex:0 0 var(--head-h);display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);z-index:10;gap:8px}
-.brand{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
-.jr-logo-crop{width:48px;height:38px;display:flex;align-items:center;overflow:hidden;flex-shrink:0}
-.jr-logo-crop img{max-width:48px;max-height:34px;object-fit:contain}
-.eyebrow,.kicker{margin:0;font-size:calc(10px * var(--font-scale));font-weight:800;letter-spacing:.08em;color:#628094}
-h1{margin:0;font-size:calc(17px * var(--font-scale));line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#333333}
-.prototype-chip{font-size:calc(11px * var(--font-scale));font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#667b8a;flex-shrink:0}
-
-/* ★各div内のh2共通：半透明白枠デザイン */
-h2 {
-  display: inline-block;
-  padding: 6px 14px;
-  margin-top: 0;
-  margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(23, 61, 89, 0.08);
-  color: #173d59;
+/* 全体基本設定 */
+:root {
+  --primary-color: #005A9C;
+  --accent-color: #D32F2F;
+  --bg-color: #F4F6F8;
+  --card-bg: #FFFFFF;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --border-color: #E0E0E0;
+  --radius: 12px;
 }
 
-/* 設定⚙️ボタン */
-.settings-trigger-btn {
-  border: none;
-  background: transparent;
-  font-size: calc(18px * var(--font-scale));
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+/* ヘッダー */
+.app-header {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  padding: 12px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.my-station-selector {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.settings-trigger-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  gap: 6px;
+  font-size: 0.9rem;
 }
 
-/* 文字サイズ変更ボタン */
-.Mojibtn{
-  padding:6px 10px;
-  font-size:calc(12px * var(--font-scale));
-  color:#ffffff;
-  background-color:#007bff;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  white-space:nowrap;
-  flex-shrink:0;
-  font-weight:700;
-  box-shadow:0 2px 4px rgba(0,0,0,0.1);
-}
-.Mojibtn:hover{background-color:#0056b3}
-
-/* --- メイン領域（修正部分） --- */
-.app-main{
-  flex:1;
-  min-height:0;
-  overflow:hidden;
-  position:relative;
-}
-
-/* ★横スライド用コンテナ（4画面分 = 400%） */
-.views-wrapper {
-  display: flex;
-  width: 400%;
-  height: 100%;
-  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
-}
-
-/* ★各画面のビュー（1画面分 = 25%） */
-.view {
-  width: 25%;
-  height: 100%;
-  overflow: hidden;
-  opacity: 1;
-  flex-shrink: 0;
-}
-
-.view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
-
-/* ★背景画像を center bottom/cover に統一 */
-.navi-bg{background:linear-gradient(rgba(249,252,254,.3),rgba(249,252,254,.5)),url("./assets/student-misumi-station.png") center bottom/cover fixed}
-.connection-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/student-kaishoro.png") center bottom/cover}
-.map-bg{background:linear-gradient(rgba(248,252,255,.3),rgba(248,252,255,.5)),url("./assets/bg-map.jpg") center bottom/cover}
-.timetable-bg{background:linear-gradient(rgba(250,252,253,.3),rgba(250,252,253,.5)),url("./assets/bg-timetable.jpg") center bottom/cover}
-
-.sticky-tools{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:1fr auto;gap:8px;padding:5px 0 10px;background:linear-gradient(#f8fbfd 72%,rgba(248,251,253,0))}
-.direction-switch{display:grid;grid-template-columns:1fr 1fr;background:rgba(233,240,245,.7);border-radius:13px;padding:3px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.seg-btn{border:0;background:transparent;border-radius:10px;padding:10px 8px;font-weight:800;font-size:14px}
-.seg-btn.active{background:rgba(255,255,255,.75);color:var(--blue);box-shadow:0 2px 7px rgba(20,54,74,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.station-focus-btn{border:1px solid var(--line);background:rgba(255,255,255,.6);border-radius:13px;padding:6px 10px;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:5px;align-items:center;min-width:92px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.station-focus-btn span:first-child{grid-column:1/3;font-size:9px;color:var(--muted)}
-.station-focus-btn strong{font-size:calc(14px * var(--font-scale))}
-.station-focus-btn span:last-child{font-size:calc(12px * var(--font-scale))}
-
-/* メインカード群（すりガラス＋透過背景） */
-.next-trains-card,.route-panel,.connection-overview,.map-card,.timetable-box{background:rgba(255,255,255,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(219,230,238,.8);border-radius:18px;box-shadow:0 6px 22px rgba(39,67,86,.08);}
-.next-trains-card{padding:13px;margin-bottom:11px}
-.section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.section-heading.compact h2,.section-heading.compact h3{margin:0;font-size:calc(17px * var(--font-scale));}
-.section-heading.route-heading h2{margin:0;font-size:calc(19px * var(--font-scale))}
-.text-btn{border:0;background:transparent;color:var(--blue);font-weight:800;font-size:calc(12px * var(--font-scale));padding:8px}
-.next-train-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
-
-/* カード内の子要素 */
-.next-train-card{position:relative;border:1px solid rgba(220,231,239,.8);background:rgba(255,255,255,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:13px;min-width:0;padding:9px 5px;text-align:center}
-.next-train-card strong{display:block;font-size:calc(19px * var(--font-scale))}
-.next-train-card span:not(.next-order){display:block;font-size:calc(11px * var(--font-scale));font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.next-train-card small{font-size:calc(9px * var(--font-scale));color:var(--muted)}
-.next-order{position:absolute;left:5px;top:5px;width:17px;height:17px;border-radius:50%;background:#edf5fa;color:var(--blue);font-size:calc(10px * var(--font-scale));font-weight:900;display:grid;place-items:center}
-.route-panel{padding:14px 11px;margin-bottom:6px}
-.route-help{font-size:calc(11px * var(--font-scale));color:var(--muted);margin:7px 0 12px}
-.live-badge{font-size:calc(10px * var(--font-scale));color:var(--green);font-weight:800;display:flex;align-items:center;gap:5px}
-.live-badge i{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(19,138,99,.1)}
-
-.vertical-route{padding:2px 1px 10px}
-.station-row,.train-on-route{width:100%;border:0;background:transparent;display:grid;grid-template-columns:42px 1fr;text-align:left;padding:0;position:relative}
-.station-row{min-height:58px}
-.station-axis{position:relative;display:flex;justify-content:center}
-.station-dot{position:absolute;top:14px;width:16px;height:16px;border:4px solid var(--blue);border-radius:50%;background:rgba(255,255,255,.8);z-index:2}
-.station-line{position:absolute;top:28px;bottom:-31px;width:5px;border-radius:5px;background:linear-gradient(var(--blue),#73b4dc)}
-.station-row.hub .station-dot{width:22px;height:22px;top:11px;border-color:#123f67;box-shadow:0 0 0 5px rgba(22,118,189,.12)}
-.station-copy{min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 6px 8px 0;border-bottom:1px solid rgba(219,230,238,.72)}
-.station-copy strong{font-size:calc(16px * var(--font-scale))}
-.station-copy small{font-size:calc(11px * var(--font-scale));color:var(--blue);font-weight:700;text-align:right}
-.station-copy b{font-size:calc(18px * var(--font-scale))}
-.train-on-route{margin:-3px 0 8px;min-height:80px;align-items:center}
-.train-axis-icon{justify-self:center;width:34px;height:34px;border-radius:12px;background:#ffd25c;border:2px solid #26495e;display:grid;place-items:center;font-size:18px;z-index:3;box-shadow:0 3px 8px rgba(30,60,80,.14)}
-.train-on-route.ds .train-axis-icon{background:#172835;color:#fff}
-
-/* 走行中列車カード */
-.train-route-card{display:block;background:rgba(248,251,253,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid #d9e6ee;border-radius:14px;padding:9px 10px;margin-right:2px}
-.train-route-top{display:flex;align-items:center;gap:6px;min-width:0}
-.train-route-top strong{font-size:calc(14px * var(--font-scale))}
-.train-route-top em{font-style:normal;font-size:calc(10px * var(--font-scale));color:#825f00;background:rgba(255,243,201,.8);border-radius:999px;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.train-route-top b{margin-left:auto;font-size:calc(10px * var(--font-scale));border-radius:999px;padding:3px 7px}
-.normal{color:var(--green)!important}.delay{color:var(--red)!important}.arrived{color:#627786!important}
-.train-route-time{display:block;font-size:calc(18px * var(--font-scale));font-weight:900;color:#173d59;margin-top:3px}
-.train-route-card small{display:block;color:var(--muted);font-size:calc(10px * var(--font-scale));margin-top:2px}
-.train-on-route.stopped .train-axis-icon{background:#e7edf1}
-
-/* ２，３，４ページ目の上部タイトル文章エリア */
-.page-title {
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(219, 230, 238, 0.8);
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(39, 67, 86, 0.06);
-}
-
-.page-title h2 {
-  font-size: calc(23px * var(--font-scale));
-  margin: 0 0 4px 0;
+.my-station-selector select {
+  padding: 6px 12px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  border-radius: 6px;
   border: none;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
-  padding: 0;
+  background-color: #ffffff;
+  color: var(--primary-color);
+  cursor: pointer;
+  outline: none;
 }
 
-.page-title p {
-  font-size: calc(12px * var(--font-scale));
-  color: #4f6475;
-  line-height: 1.5;
+/* メインレイアウト */
+.main-content {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* マイ駅表示ヘッダー */
+.station-header-section {
+  background: linear-gradient(135deg, #005A9C, #003B66);
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.station-header-section .badge {
+  background-color: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.station-header-section h2 {
+  margin: 6px 0 0 0;
+  font-size: 1.8rem;
+}
+
+/* カード共通スタイル */
+.approach-summary-card, .timetable-card, .map-section {
+  background-color: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+}
+
+.card-title, .card-title-box h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 6px;
+}
+
+/* 列車カード */
+.train-card {
+  border: 1px solid var(--border-color);
+  border-left: 6px solid var(--primary-color);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background-color: #FAFAFA;
+}
+
+.train-card.train-ds {
+  border-left-color: var(--accent-color);
+  background-color: #FFF5F5;
+}
+
+.train-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.service-name {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.train-no {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.badge-status {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.badge-status.status-normal {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.badge-status.status-delay {
+  background-color: #FFEBEE;
+  color: #C62828;
+}
+
+.train-body p {
+  margin: 4px 0;
+  font-size: 0.95rem;
+}
+
+/* 時刻表エリア */
+.timetable-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .timetable-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.direction-title {
+  font-size: 1rem;
+  margin: 0 0 10px 0;
+  padding: 6px 10px;
+  background-color: #ECEFF1;
+  border-radius: 6px;
+  color: #37474F;
+  text-align: center;
+}
+
+.time-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
 }
 
-.connection-overview{padding:16px}
-.arrival-card{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;background:rgba(245,251,253,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid #d9eaf5;border-radius:14px;padding:12px}
-.arrival-card .mini-label{grid-column:1/3;font-size:10px;color:var(--muted)}
-.arrival-card strong{font-size:calc(19px * var(--font-scale))}
-.status-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 9px;background:rgba(238,248,244,.8);font-size:11px;font-weight:900}
-.connection-arrow{text-align:center;font-size:22px;color:#7290a4;padding:5px}
-.connection-list{display:grid;gap:8px;margin-top:10px}
+.time-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+}
 
-/* 乗り継ぎリストアイテム */
-.connection-item{display:grid;grid-template-columns:54px 1fr auto;align-items:center;gap:8px;border:1px solid #dbe6ee;border-radius:12px;background:rgba(255,255,255,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:10px}
-.connection-item.large{grid-template-columns:62px 1fr auto;padding:12px}
-.connection-item>strong{font-size:calc(18px * var(--font-scale));color:#173d59}
-.connection-item div{display:grid;gap:2px}
-.connection-item div b{font-size:calc(13px * var(--font-scale))}.connection-item div span{font-size:11px;color:var(--muted)}
-.connection-item small{font-size:calc(10px * var(--font-scale));color:var(--blue);font-weight:800}
-.prototype-note{margin-top:12px;padding:12px;border-radius:13px;background:rgba(255,247,218,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:11px;line-height:1.5;display:grid;gap:4px}
-.prototype-note strong{color:#8a6500}
+.time-item:last-child {
+  border-bottom: none;
+}
 
-.map-card{overflow:hidden;padding:5px;min-height:430px}
-.svg-route-map{width:100%;height:auto;min-height:420px;display:block}
-.svg-route-halo{fill:none;stroke:white;stroke-width:11;stroke-linecap:round;stroke-linejoin:round}
-.svg-route-line{fill:none;stroke:var(--blue);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round}
-.svg-station circle{fill:rgba(255,255,255,.8);stroke:#0f4d7a;stroke-width:3}
-.svg-station text{font-size:calc(13px * var(--font-scale));font-weight:800;fill:#17324a;paint-order:stroke;stroke:white;stroke-width:4px}
-.svg-train-circle{fill:#ffd25c;stroke:#173d59;stroke-width:2}.svg-train text{font-size:calc(17px * var(--font-scale))}
-.svg-train-label-bg{fill:rgba(255,255,255,.75);stroke:#a9c9dd}.svg-train-label{font-size:calc(11px * var(--font-scale));font-weight:800;fill:#17324a}
-.footnote{font-size:calc(10px * var(--font-scale));color:var(--muted);line-height:1.5;margin:8px 4px}
+.time-item.is-limited {
+  color: var(--accent-color);
+  font-weight: bold;
+  background-color: #FFF8F8;
+}
 
-.timetable-box{padding:14px;}
-.timetable-box label{display:block;font-size:calc(11px * var(--font-scale));font-weight:800;margin-bottom:5px;}
+.time-item .time {
+  font-family: monospace;
+  font-size: 1.05rem;
+}
 
-/* 時刻表セレクトボックス */
-.timetable-box select{width:100%;height:44px;border:1px solid #cbdbe6;border-radius:11px;background:rgba(255,255,255,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:0 10px;font-size:calc(16px * var(--font-scale));}
+.time-item .type {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
 
-/* 時刻表の方面切り替えタブ */
-.direction-tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(234,241,245,.6);border-radius:12px;padding:3px;margin:10px 0;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.direction-btn{border:0;background:transparent;border-radius:99px;padding:8px 12px;font-size:calc(13px * var(--font-scale));font-weight:800;color:var(--muted);cursor:pointer;transition:background-color 0.2s, color 0.2s;}
-.direction-btn.active{background:rgba(255,255,255,.85);color:var(--blue);box-shadow:0 2px 6px rgba(20,54,74,.1);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.time-item.is-limited .type {
+  color: var(--accent-color);
+}
 
-/* 時刻表リスト */
-.timetable-list{display:grid;gap:1px;max-height:calc(100dvh - 310px);overflow-y:auto;border-radius:10px;border:1px solid rgba(220, 232, 238, 0.7);background:transparent;}
-.timetable-row{display:grid;grid-template-columns:80px 1fr;align-items:center;padding:10px 12px;background:transparent;border-bottom:1px solid rgba(237,242,245,.6)}
-.timetable-row strong{font-size:calc(18px * var(--font-scale));color:#173d59;text-shadow:1.5px 1.5px 0 #fff,-1.5px 1.5px 0 #fff,1.5px -1.5px 0 #fff,-1.5px -1.5px 0 #fff,0 1.5px 0 #fff,0 -1.5px 0 #fff,-1.5px 0 0 #fff,1.5px 0 0 #fff}
-.timetable-row span{font-size:calc(12px * var(--font-scale));color:#183247;text-shadow:1px 1px 0 #fff,-1px 1px 0 #fff,1px -1px 0 #fff,-1px -1px 0 #fff}
-.empty-state{padding:16px;text-align:center;color:var(--muted);font-size:calc(12px * var(--font-scale))}
+/* 地図エリア */
+#map {
+  width: 100%;
+  height: 350px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
 
-.bottom-nav{height:var(--nav-h);flex:0 0 var(--nav-h);display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:5px 6px max(5px,env(safe-area-inset-bottom));background:rgba(255,255,255,.98);border-top:1px solid var(--line);z-index:10}
-.nav-btn{border:0;background:transparent;border-radius:13px;min-height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:calc(10px * var(--font-scale));font-weight:800;color:#6f8190}
-.nav-btn.active{background:var(--blue-soft);color:var(--blue)}
-.nav-icon{font-size:calc(20px * var(--font-scale));line-height:1}
-
-.splash-screen{position:fixed;inset:0;z-index:100;background:white;display:grid;place-items:center;transition:opacity .35s ease, visibility .35s ease}
-.splash-screen.hide{opacity:0;visibility:hidden;pointer-events:none}
-.splash-inner{text-align:center;padding:24px}
-.splash-logo{width:min(44vw,190px);height:auto}
-.splash-title{font-size:calc(22px * var(--font-scale));font-weight:900;margin:14px 0 4px}.splash-subtitle{font-size:calc(12px * var(--font-scale));color:var(--muted);margin:0}
-
-.sheet-backdrop{position:fixed;inset:0;background:rgba(14,34,49,.35);z-index:50;opacity:0;transition:.18s}
-.sheet-backdrop.open{opacity:1}
-.bottom-sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-height:min(74dvh,620px);overflow:hidden;background:white;border-radius:22px 22px 0 0;box-shadow:0 -10px 35px rgba(22,47,64,.18);transform:translateY(102%);transition:transform .2s ease}
-.bottom-sheet.open{transform:translateY(0)}
-.sheet-handle{width:42px;height:5px;border-radius:99px;background:#cad5dd;margin:8px auto 3px}
-.sheet-head{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 15px 10px;border-bottom:1px solid #e6edf2}
-.sheet-head h2{margin:1px 0 0;font-size:calc(21px * var(--font-scale));border:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;padding:0}
-.sheet-close{width:42px;height:42px;border:0;border-radius:50%;background:#eef3f6;font-size:25px}
-.sheet-body{max-height:calc(min(74dvh,620px) - 80px);overflow-y:auto;padding:14px 15px 20px;overscroll-behavior:contain}
-.sheet-section-title{font-size:calc(12px * var(--font-scale));font-weight:900;margin:12px 0 7px;display:flex;justify-content:space-between}
-.sheet-section-title span{font-size:calc(9px * var(--font-scale));color:var(--muted)}
-.sheet-callout{display:grid;gap:4px;background:#eef8ff;border-radius:13px;padding:12px;font-size:calc(12px * var(--font-scale));line-height:1.5}
-.sheet-callout.subtle{background:#f5f8fa;margin-top:12px}
-.departure-list{display:grid;border:1px solid #e0e9ef;border-radius:12px;overflow:hidden}
-.departure-list div{display:grid;grid-template-columns:72px 1fr;padding:10px 12px;border-bottom:1px solid #edf2f5}
-.departure-list div:last-child{border-bottom:0}.departure-list strong{font-size:calc(17px * var(--font-scale))}.departure-list span{font-size:calc(12px * var(--font-scale))}
-.primary-sheet-btn{width:100%;border:0;border-radius:13px;background:var(--blue);color:white;font-weight:900;padding:13px;margin-top:13px}
-.train-sheet-hero{display:flex;gap:11px;align-items:center}
-.train-sheet-hero .mini-train-photo{width:92px;height:58px;border-radius:10px;object-fit:cover}
-.mini-train-emoji{font-size:calc(34px * var(--font-scale))}
-.train-sheet-hero>div{display:grid;gap:5px}.train-sheet-hero>div>strong{font-size:16px}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px}
-.detail-grid div{background:#f7fafc;border-radius:11px;padding:10px;display:grid;gap:3px}
-.detail-grid small{color:var(--muted);font-size:10px}.detail-grid strong{font-size:calc(14px * var(--font-scale))}
-
-@media (min-width:700px){
-  .app-shell{max-width:520px;margin:0 auto;border-left:1px solid #dbe6ee;border-right:1px solid #dbe6ee}
+.no-data, .loading-text {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
 }
