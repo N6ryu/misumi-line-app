@@ -1,5 +1,5 @@
 // 三角線リアルタイムナビゲーション - app.js
-// マイ駅（宇土〜三角）動的切り替え・接近情報・時刻表統合モジュール
+// マイ駅選択（宇土〜三角）・接近表示・時刻表統合モジュール
 
 // --- 宇土〜三角の選択対象駅リスト ---
 const TARGET_STATIONS = [
@@ -8,16 +8,19 @@ const TARGET_STATIONS = [
 
 // 現在選択されているマイ駅（初期値: 宇土 / localStorage保持）
 let currentMyStation = localStorage.getItem("myStation") || "宇土";
+let mapInstance = null;
+let trainMarkers = [];
 
-// DOMロード完了時の初期化
+// DOMロード完了時の初期化処理
 document.addEventListener("DOMContentLoaded", async () => {
   initMyStationSelector();
+  initMap();
   await refreshAppUI();
 
-  // 定期自動更新（例: 30秒ごとに列車位置と接近表示をリフレッシュ）
+  // 定期自動更新（15秒ごとに列車位置および接近状況をリフレッシュ）
   setInterval(async () => {
     await refreshAppUI();
-  }, 30000);
+  }, 15000);
 });
 
 /**
@@ -27,12 +30,12 @@ function initMyStationSelector() {
   const selectEl = document.getElementById("station-select");
   if (!selectEl) return;
 
-  // セレクトボックスの選択肢を生成（宇土〜三角）
+  // 宇土〜三角駅のドロップダウン要素を自動生成
   selectEl.innerHTML = TARGET_STATIONS.map(st => 
     `<option value="${st}" ${st === currentMyStation ? "selected" : ""}>${st}駅</option>`
   ).join("");
 
-  // 選択変更時のイベントリスナー
+  // 駅変更時のイベントハンドラ
   selectEl.addEventListener("change", async (e) => {
     currentMyStation = e.target.value;
     localStorage.setItem("myStation", currentMyStation);
@@ -41,20 +44,20 @@ function initMyStationSelector() {
 }
 
 /**
- * 2. 画面全体の表示リフレッシュ
+ * 2. 画面全体の表示リフレッシュ関数
  */
 async function refreshAppUI() {
-  // 列車データのロード（mock-data.js 連携）
-  const currentTrains = typeof loadTrainData === "function" ? await loadTrainData() : trains;
+  // mock-data.js から最新データ取得
+  const currentTrains = typeof loadTrainData === "function" ? await loadTrainData() : (typeof trains !== "undefined" ? trains : []);
 
-  // 各エリアの表示更新
   updateMyStationHeader(currentMyStation);
   renderApproachInfo(currentMyStation, currentTrains);
   renderTimetable(currentMyStation);
+  updateMapMarkers(currentTrains);
 }
 
 /**
- * 3. マイ駅ヘッダー表示の更新
+ * 3. マイ駅表示ヘッダーの更新
  */
 function updateMyStationHeader(stationName) {
   const labelEl = document.getElementById("my-station-name-display");
@@ -64,57 +67,57 @@ function updateMyStationHeader(stationName) {
 }
 
 /**
- * 4. 接近情報パネルの描画（マイ駅への最寄り列車判定）
+ * 4. 接近情報パネルの判定・描画
  */
 function renderApproachInfo(stationName, trainList) {
   const container = document.getElementById("approach-info-container");
   if (!container) return;
 
-  const myIdx = stationIndex(stationName);
+  const myIdx = typeof stationIndex === "function" ? stationIndex(stationName) : -1;
   if (myIdx < 0) {
-    container.innerHTML = `<div class="info-card">駅情報が見つかりません</div>`;
+    container.innerHTML = `<div class="info-card">対象駅の情報が見つかりません</div>`;
     return;
   }
 
-  // マイ駅に向かっている（または最寄りの）列車を抽出
+  // マイ駅との駅数距離を計算して昇順ソート（最寄りの列車を上に表示）
   const trainStatuses = trainList.map(train => {
-    const pIdx = typeof train.positionIndex === "number" ? train.positionIndex : routePositionIndex(train);
-    const diff = pIdx - myIdx; // 正: 三角側 / 負: 熊本側
-    const distance = Math.abs(diff);
+    const pIdx = typeof train.positionIndex === "number" ? train.positionIndex : (typeof routePositionIndex === "function" ? routePositionIndex(train) : 0);
+    const distance = Math.abs(pIdx - myIdx);
 
     return {
       ...train,
       currentPosIdx: pIdx,
       distanceStations: distance,
-      locationStr: locationText(train),
-      statusStr: statusText(train),
-      nextTimeStr: nextTimeValue(train)
+      locationStr: typeof locationText === "function" ? locationText(train) : `${train.currentStation}付近`,
+      statusStr: typeof statusText === "function" ? statusText(train) : "定刻",
+      nextTimeStr: typeof nextTimeValue === "function" ? nextTimeValue(train) : ""
     };
   }).sort((a, b) => a.distanceStations - b.distanceStations);
 
   if (trainStatuses.length === 0) {
-    container.innerHTML = `<div class="info-card"><p>現在走行中の列車はありません</p></div>`;
+    container.innerHTML = `<div class="info-card"><p>現在運行中の列車はありません。</p></div>`;
     return;
   }
 
-  // 最寄り列車の情報を生成
+  // 接近カードのHTML組み立て
   let html = `<div class="approach-summary-card">`;
-  html += `<h3>${stationName}駅 周辺の運行状況</h3>`;
+  html += `<h3 class="card-title">${stationName}駅 周辺の走行状況</h3>`;
 
   trainStatuses.forEach(t => {
-    const isStoppedAtMyStation = isTerminalStopped(t) && t.currentStation === stationName;
-    
+    const isDelay = t.delayMinutes > 0;
+    const isATrain = t.serviceKind === "ds" || t.serviceName.includes("A列車");
+
     html += `
-      <div class="train-card service-${t.serviceKind}">
+      <div class="train-card ${isATrain ? 'train-ds' : 'train-local'}">
         <div class="train-header">
           <span class="service-name">${t.serviceName}</span>
-          <span class="train-no">(${t.trainNo})</span>
-          <span class="badge-status ${t.delayMinutes > 0 ? 'delay' : 'normal'}">${t.statusStr}</span>
+          <span class="train-no">${t.trainNo}</span>
+          <span class="badge-status ${isDelay ? 'status-delay' : 'status-normal'}">${t.statusStr}</span>
         </div>
-        <div class="train-details">
-          <p><strong>現在地:</strong> ${t.locationStr}</p>
-          <p><strong>進行方向:</strong> ${t.direction}</p>
-          ${t.scheduledNextArrival ? `<p><strong>次駅予定:</strong> ${t.nextStop}${t.nextTimeStr}</p>` : ''}
+        <div class="train-body">
+          <p class="train-location"><strong>現在地:</strong> ${t.locationStr}</p>
+          <p class="train-direction"><strong>行先/方向:</strong> ${t.direction}</p>
+          ${t.nextTimeStr ? `<p class="train-next"><strong>次駅予定:</strong> ${t.nextStop}${t.nextTimeStr}</p>` : ''}
         </div>
       </div>
     `;
@@ -125,7 +128,7 @@ function renderApproachInfo(stationName, trainList) {
 }
 
 /**
- * 5. マイ駅の時刻表描画
+ * 5. マイ駅の上下線時刻表の描画
  */
 function renderTimetable(stationName) {
   const container = document.getElementById("timetable-container");
@@ -133,7 +136,7 @@ function renderTimetable(stationName) {
 
   const data = timetableData[stationName];
   if (!data) {
-    container.innerHTML = `<p>時刻表データがありません。</p>`;
+    container.innerHTML = `<p class="no-data">※ ${stationName}駅の時刻表データはありません。</p>`;
     return;
   }
 
@@ -142,14 +145,14 @@ function renderTimetable(stationName) {
 
   let html = `
     <div class="timetable-card">
-      <h3>${stationName}駅 時刻表</h3>
+      <h3 class="card-title">${stationName}駅 時刻表</h3>
       <div class="timetable-grid">
         <div class="timetable-column">
-          <h4>下り (三角方面)</h4>
+          <h4 class="direction-title">下り (三角方面)</h4>
           ${renderTimeList(toMisumi)}
         </div>
         <div class="timetable-column">
-          <h4>上り (熊本方面)</h4>
+          <h4 class="direction-title">上り (熊本方面)</h4>
           ${renderTimeList(toKumamoto)}
         </div>
       </div>
@@ -160,19 +163,76 @@ function renderTimetable(stationName) {
 }
 
 /**
- * 時刻表リストのHTML生成ヘルパー
+ * 時刻表リスト表示ヘルパー
  */
 function renderTimeList(list) {
-  if (list.length === 0) return `<p class="no-data">運行なし</p>`;
-  
+  if (!list || list.length === 0) {
+    return `<p class="no-data">発車予定なし</p>`;
+  }
+
   return `
     <ul class="time-list">
-      ${list.map(([time, type]) => `
-        <li class="time-item ${type.includes('A列車') ? 'limited-express' : ''}">
-          <span class="time">${time}</span>
-          <span class="type">${type}</span>
-        </li>
-      `).join('')}
+      ${list.map(([time, type]) => {
+        const isLimited = type.includes("A列車");
+        return `
+          <li class="time-item ${isLimited ? 'is-limited' : ''}">
+            <span class="time">${time}</span>
+            <span class="type">${type}</span>
+          </li>
+        `;
+      }).join('')}
     </ul>
   `;
+}
+
+/**
+ * 6. Leaflet マップ初期化と描画
+ */
+function initMap() {
+  const mapEl = document.getElementById("map");
+  if (!mapEl || typeof L === "undefined") return;
+
+  // 宇土〜三角の中心付近に初期マップを設置
+  mapInstance = L.map('map').setView([32.65, 130.55], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(mapInstance);
+
+  // route-geometry.js の線形描画連携
+  if (typeof getRoutePolylineCoordinates === "function") {
+    const latLngs = getRoutePolylineCoordinates();
+    if (latLngs.length > 0) {
+      L.polyline(latLngs, { color: '#005A9C', weight: 4, opacity: 0.8 }).addTo(mapInstance);
+    }
+  }
+}
+
+/**
+ * マップ上の列車マーカー更新
+ */
+function updateMapMarkers(trainList) {
+  if (!mapInstance || typeof getLatLngFromPositionIndex !== "function") return;
+
+  // 既存マーカー消去
+  trainMarkers.forEach(m => mapInstance.removeLayer(m));
+  trainMarkers = [];
+
+  trainList.forEach(t => {
+    const pIdx = typeof t.positionIndex === "number" ? t.positionIndex : routePositionIndex(t);
+    const coords = getLatLngFromPositionIndex(pIdx);
+
+    if (coords && coords.lat && coords.lng) {
+      const marker = L.circleMarker([coords.lat, coords.lng], {
+        radius: 8,
+        color: '#FFFFFF',
+        fillColor: t.serviceKind === 'ds' ? '#D32F2F' : '#005A9C',
+        fillOpacity: 1,
+        weight: 2
+      }).addTo(mapInstance);
+
+      marker.bindPopup(`<b>${t.serviceName}</b><br>${locationText(t)}`);
+      trainMarkers.push(marker);
+    }
+  });
 }
