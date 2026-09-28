@@ -69,32 +69,20 @@ h2 {
 }
 .Mojibtn:hover{background-color:#0056b3}
 
-/* --- メイン領域（修正部分） --- */
-.app-main{
-  flex:1;
-  min-height:0;
+/* --- メイン領域 --- */
+.app-main{flex:1;min-height:0;overflow:hidden}
+.view{
+  display:none;
+  width:100%;
+  height:100%;
   overflow:hidden;
-  position:relative;
+  opacity:0;
+  transition:opacity 0.25s ease-in-out;
 }
-
-/* ★横スライド用コンテナ（4画面分 = 400%） */
-.views-wrapper {
-  display: flex;
-  width: 400%;
-  height: 100%;
-  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  will-change: transform;
+.view.active{
+  display:block;
+  opacity:1;
 }
-
-/* ★各画面のビュー（1画面分 = 25%） */
-.view {
-  width: 25%;
-  height: 100%;
-  overflow: hidden;
-  opacity: 1;
-  flex-shrink: 0;
-}
-
 .view-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px;scrollbar-gutter:stable}
 
 /* ★背景画像を center bottom/cover に統一 */
