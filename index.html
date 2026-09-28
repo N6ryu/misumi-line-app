@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
   <title>三角線 リアルタイムナビ</title>
-  <link rel="stylesheet" href="./styles.css?v=24" />
+  <link rel="stylesheet" href="./styles.css?v=25" />
 </head>
 <body class="splash-active">
   <div id="splashScreen" class="splash-screen" aria-label="アプリ起動画面">
@@ -28,116 +28,116 @@
         </div>
       </div>
       <div class="prototype-chip">試作</div>
-      <button type="button" class="settings-trigger-btn" id="openSettingsBtn" aria-label="設定を開く">
-  ⚙️
-</button>
+      <button type="button" class="settings-trigger-btn" id="openSettingsBtn" aria-label="設定を開く">⚙️</button>
       <button class="Mojibtn" id="Mojibtn" type="button">文字の大きさ</button>
     </header>
 
     <main class="app-main">
-      <!-- 1: 列車ナビ -->
-      <section class="view active" data-view="0" id="viewNavi">
-        <div class="view-scroll navi-bg">
-          <div class="sticky-tools">
-            <div class="direction-switch" role="group" aria-label="方面切替">
-              <button type="button" class="seg-btn active" data-direction="toKumamoto">熊本方面</button>
-              <button type="button" class="seg-btn" data-direction="toMisumi">三角方面</button>
-            </div>
-            <button type="button" class="station-focus-btn" id="favoriteStationBtn">
-              <span>いつもの駅</span><strong id="favoriteStationName">三角</strong><span aria-hidden="true">⌄</span>
-            </button>
-          </div>
-
-          <section class="next-trains-card" aria-labelledby="nextTrainHeading">
-            <div class="section-heading compact">
-              <div>
-                <span class="kicker">NEXT TRAINS</span>
-                <h2 id="nextTrainHeading">次の列車</h2>
+      <div class="views-wrapper" id="viewsWrapper">
+        <!-- 1: 列車ナビ -->
+        <section class="view active" data-view="0" id="viewNavi">
+          <div class="view-scroll navi-bg">
+            <div class="sticky-tools">
+              <div class="direction-switch" role="group" aria-label="方面切替">
+                <button type="button" class="seg-btn active" data-direction="toKumamoto">熊本方面</button>
+                <button type="button" class="seg-btn" data-direction="toMisumi">三角方面</button>
               </div>
-              <button type="button" class="text-btn" id="jumpTimetableBtn">時刻表を見る</button>
+              <button type="button" class="station-focus-btn" id="favoriteStationBtn">
+                <span>いつもの駅</span><strong id="favoriteStationName">三角</strong><span aria-hidden="true">⌄</span>
+              </button>
             </div>
-            <div id="nextTrainStrip" class="next-train-strip"></div>
-          </section>
 
-          <section class="route-panel" aria-labelledby="routeHeading">
-            <div class="section-heading route-heading">
-              <div>
-                <span class="kicker">REALTIME</span>
-                <h2 id="routeHeading">列車位置・発着時刻</h2>
+            <section class="next-trains-card" aria-labelledby="nextTrainHeading">
+              <div class="section-heading compact">
+                <div>
+                  <span class="kicker">NEXT TRAINS</span>
+                  <h2 id="nextTrainHeading">次の列車</h2>
+                </div>
+                <button type="button" class="text-btn" id="jumpTimetableBtn">時刻表を見る</button>
               </div>
-              <span class="live-badge"><i></i>サンプルデータ</span>
-            </div>
-            <p class="route-help">列車をタップすると詳細、駅をタップすると発車・接続情報を表示します。</p>
-            <div id="verticalRoute" class="vertical-route"></div>
-          </section>
-        </div>
-      </section>
+              <div id="nextTrainStrip" class="next-train-strip"></div>
+            </section>
 
-      <!-- 2: 接続 -->
-      <section class="view" data-view="1" id="viewConnections">
-        <div class="view-scroll connection-bg">
-          <div class="page-title">
-            <span class="kicker">CONNECTION</span>
-            <h2>乗り換えまで、ひと続きに</h2>
-            <p>三角線の到着予定と、その先につながる列車を同じ流れで確認する画面です。</p>
-          </div>
-
-          <section class="connection-overview">
-            <div class="arrival-card">
-              <span class="mini-label">三角線</span>
-              <strong>熊本 10:56着予定</strong>
-              <span class="status-pill normal">定刻</span>
-            </div>
-            <div class="connection-arrow" aria-hidden="true">↓</div>
-            <div class="section-heading compact">
-              <div>
-                <span class="kicker">AT KUMAMOTO</span>
-                <h3>熊本駅からつながる列車</h3>
+            <section class="route-panel" aria-labelledby="routeHeading">
+              <div class="section-heading route-heading">
+                <div>
+                  <span class="kicker">REALTIME</span>
+                  <h2 id="routeHeading">列車位置・発着時刻</h2>
+                </div>
+                <span class="live-badge"><i></i>サンプルデータ</span>
               </div>
+              <p class="route-help">列車をタップすると詳細、駅をタップすると発車・接続情報を表示します。</p>
+              <div id="verticalRoute" class="vertical-route"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- 2: 接続 -->
+        <section class="view" data-view="1" id="viewConnections">
+          <div class="view-scroll connection-bg">
+            <div class="page-title">
+              <span class="kicker">CONNECTION</span>
+              <h2>乗り換えまで、ひと続きに</h2>
+              <p>三角線の到着予定と、その先につながる列車を同じ流れで確認する画面です。</p>
             </div>
-            <div id="connectionList" class="connection-list"></div>
-          </section>
 
-          <div class="prototype-note">
-            <strong>プロトタイプ表示</strong>
-            <span>接続時刻はUI検証用のサンプルです。正式運用時はJR九州から提供・許諾された時刻表／運行情報と照合します。</span>
-          </div>
-        </div>
-      </section>
+            <section class="connection-overview">
+              <div class="arrival-card">
+                <span class="mini-label">三角線</span>
+                <strong>熊本 10:56着予定</strong>
+                <span class="status-pill normal">定刻</span>
+              </div>
+              <div class="connection-arrow" aria-hidden="true">↓</div>
+              <div class="section-heading compact">
+                <div>
+                  <span class="kicker">AT KUMAMOTO</span>
+                  <h3>熊本駅からつながる列車</h3>
+                </div>
+              </div>
+              <div id="connectionList" class="connection-list"></div>
+            </section>
 
-      <!-- 3: 地図 -->
-      <section class="view" data-view="2" id="viewMap">
-        <div class="view-scroll map-bg">
-          <div class="page-title">
-            <span class="kicker">MAP</span>
-            <h2>路線を地理的に確認</h2>
-            <p>外部地図ライブラリに依存しない軽量SVG路線図です。</p>
-          </div>
-          <div id="map" class="map-card"></div>
-          <p class="footnote">※ 熊本〜三角の各駅間を10中間地点に軽量化した線形データを使用しています。</p>
-        </div>
-      </section>
-
-      <!-- 4: 時刻表 -->
-      <section class="view" data-view="3" id="viewTimetable">
-        <div class="view-scroll timetable-bg">
-          <div class="page-title">
-            <span class="kicker">TIMETABLE</span>
-            <h2>駅別時刻表</h2>
-            <p>必要なときだけ詳しく見る、補助画面として残します。</p>
-          </div>
-          <div class="timetable-box">
-            <label for="stationSelect">駅を選択</label>
-            <select id="stationSelect"></select>
-            <div class="direction-tabs">
-              <button type="button" id="toMisumiBtn" class="direction-btn">三角方面</button>
-              <button type="button" id="toKumamotoBtn" class="direction-btn active">熊本方面</button>
+            <div class="prototype-note">
+              <strong>プロトタイプ表示</strong>
+              <span>接続時刻はUI検証用のサンプルです。正式運用時はJR九州から提供・許諾された時刻表／運行情報と照合します。</span>
             </div>
-            <div id="timetable"></div>
           </div>
-          <p class="footnote">※ プロトタイプ用の確認データです。</p>
-        </div>
-      </section>
+        </section>
+
+        <!-- 3: 地図 -->
+        <section class="view" data-view="2" id="viewMap">
+          <div class="view-scroll map-bg">
+            <div class="page-title">
+              <span class="kicker">MAP</span>
+              <h2>路線を地理的に確認</h2>
+              <p>外部地図ライブラリに依存しない軽量SVG路線図です。</p>
+            </div>
+            <div id="map" class="map-card"></div>
+            <p class="footnote">※ 熊本〜三角の各駅間を10中間地点に軽量化した線形データを使用しています。</p>
+          </div>
+        </section>
+
+        <!-- 4: 時刻表 -->
+        <section class="view" data-view="3" id="viewTimetable">
+          <div class="view-scroll timetable-bg">
+            <div class="page-title">
+              <span class="kicker">TIMETABLE</span>
+              <h2>駅別時刻表</h2>
+              <p>必要なときだけ詳しく見る、補助画面として残します。</p>
+            </div>
+            <div class="timetable-box">
+              <label for="stationSelect">駅を選択</label>
+              <select id="stationSelect"></select>
+              <div class="direction-tabs">
+                <button type="button" id="toMisumiBtn" class="direction-btn">三角方面</button>
+                <button type="button" id="toKumamotoBtn" class="direction-btn active">熊本方面</button>
+              </div>
+              <div id="timetable"></div>
+            </div>
+            <p class="footnote">※ プロトタイプ用の確認データです。</p>
+          </div>
+        </section>
+      </div>
     </main>
 
     <nav class="bottom-nav" aria-label="画面切替">
@@ -156,6 +156,7 @@
     </nav>
   </div>
 
+  <!-- 詳細表示用ボトムシート -->
   <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
   <section class="bottom-sheet" id="bottomSheet" aria-modal="true" role="dialog" aria-labelledby="sheetTitle" hidden>
     <div class="sheet-handle" aria-hidden="true"></div>
@@ -169,8 +170,31 @@
     <div id="sheetBody" class="sheet-body"></div>
   </section>
 
-  <script src="./mock-data.js?v=24"></script>
-  <script src="./route-geometry.js?v=24"></script>
-  <script src="./app.js?v=24"></script>
+  <!-- 設定用ボトムシート -->
+  <div class="sheet-backdrop" id="settingsBackdrop" hidden></div>
+  <section class="bottom-sheet" id="settingsSheet" aria-modal="true" role="dialog" aria-labelledby="settingsTitle" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <div>
+        <span class="kicker">SETTINGS</span>
+        <h2 id="settingsTitle">設定</h2>
+      </div>
+      <button type="button" class="sheet-close" id="closeSettingsBtn" aria-label="閉じる">×</button>
+    </div>
+    <div class="sheet-body">
+      <div class="sheet-section-title">表示設定</div>
+      <div class="sheet-callout subtle">
+        <p style="margin: 0 0 8px 0; font-weight: bold;">マイ駅（いつもの駅）</p>
+        <p style="margin: 0; color: var(--muted); font-size: 12px;">よく使う駅をデフォルト表示に設定できます。</p>
+      </div>
+      <button type="button" class="primary-sheet-btn" id="closeSettingsBtnAction" style="margin-top: 16px;">
+        閉じる
+      </button>
+    </div>
+  </section>
+
+  <script src="./mock-data.js?v=25"></script>
+  <script src="./route-geometry.js?v=25"></script>
+  <script src="./app.js?v=25"></script>
 </body>
 </html>
