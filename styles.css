@@ -1,62 +1,121 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>三角線 リアルタイム列車運行情報</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <!-- styles.css に読み込み先を修正 -->
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #f4f6f8;
+  color: #333;
+}
 
-  <header class="app-header">
-    <div class="header-container">
-      <h1>三角線 ナビゲーション</h1>
-      <div class="my-station-selector">
-        <label for="station-select">いつもの駅：</label>
-        <select id="station-select">
-          <option value="宇土">宇土</option>
-          <option value="緑川">緑川</option>
-          <option value="住吉">住吉</option>
-          <option value="肥後長浜">肥後長浜</option>
-          <option value="網田">網田</option>
-          <option value="赤瀬">赤瀬</option>
-          <option value="石打ダム">石打ダム</option>
-          <option value="波多浦">波多浦</option>
-          <option value="三角">三角</option>
-        </select>
-      </div>
-    </div>
-  </header>
+.app-header {
+  background-color: #005a9c;
+  color: #fff;
+  padding: 10px 16px;
+}
 
-  <main class="main-content">
-    
-    <section class="station-header-section">
-      <span class="badge">MY STATION</span>
-      <h2 id="my-station-name-display">宇土駅</h2>
-    </section>
+.header-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    <section class="approach-section">
-      <div id="approach-info-container"></div>
-    </section>
+.app-header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
 
-    <section class="timetable-section">
-      <div id="timetable-container"></div>
-    </section>
+.my-station-selector select {
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  border: none;
+}
 
-    <section class="map-section">
-      <div class="card-title-box">
-        <h3>リアルタイム路線マップ</h3>
-      </div>
-      <div id="map"></div>
-    </section>
+.main-content {
+  max-width: 800px;
+  margin: 16px auto;
+  padding: 0 16px;
+}
 
-  </main>
+.station-header-section {
+  background-color: #005a9c;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="mock-data.js"></script>
-  <script src="route-geometry.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+.station-header-section .badge {
+  font-size: 0.75rem;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.station-header-section h2 {
+  margin: 8px 0 0 0;
+}
+
+.approach-summary-card,
+.timetable-card,
+.map-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #ddd;
+}
+
+.card-title {
+  margin-top: 0;
+  color: #005a9c;
+  border-bottom: 2px solid #005a9c;
+  padding-bottom: 4px;
+}
+
+.train-card {
+  border: 1px solid #ddd;
+  border-left: 5px solid #005a9c;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.train-card.train-ds {
+  border-left-color: #d32f2f;
+}
+
+.timetable-grid {
+  display: flex;
+  justify-content: space-between;
+}
+
+.timetable-column {
+  width: 48%;
+}
+
+.time-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.time-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.time-item.is-limited {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+#map {
+  width: 100%;
+  height: 300px;
+  border-radius: 4px;
+}
