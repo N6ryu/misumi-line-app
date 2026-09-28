@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>三角線 リアルタイム列車運行情報</title>
+
+  <!-- Leaflet Leaflet CSS (地図用) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- カスタムスタイルシート -->
   <link rel="stylesheet" href="style.css">
-  <!-- Leaflet CDN（地図表示用） -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -18,7 +20,9 @@
       <!-- マイ駅ドロップダウン選択 -->
       <div class="my-station-selector">
         <label for="station-select">いつもの駅：</label>
-        <select id="station-select"></select>
+        <select id="station-select">
+          <option value="宇土">宇土駅</option>
+        </select>
       </div>
     </div>
   </header>
@@ -56,7 +60,10 @@
 
   </main>
 
-  <!-- モジュール読み込み（読み込み順が重要です） -->
+  <!-- External Library JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Application Modules -->
   <script src="mock-data.js"></script>
   <script src="route-geometry.js"></script>
   <script src="app.js"></script>
