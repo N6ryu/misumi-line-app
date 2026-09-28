@@ -418,3 +418,72 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+// ==========================================
+// 画面横スワイプ切り替え機能
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  const main = document.querySelector('.app-main');
+  const navBtns = document.querySelectorAll('.bottom-nav .nav-btn');
+  const viewsCount = 4; // 総画面数 (0:列車位置, 1:運行状況, 2:地図, 3:時刻表)
+  
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchEndX = 0;
+  let touchEndY = 0;
+
+  if (!main) return;
+
+  // 現在アクティブな画面インデックスを取得
+  function getCurrentViewIndex() {
+    const activeView = document.querySelector('.view.active');
+    return activeView ? parseInt(activeView.getAttribute('data-view'), 10) : 0;
+  }
+
+  // タッチ開始時
+  main.addEventListener('touchstart', (e) => {
+    // 地図画面（view 2）でのピンチ操作や操作時はスワイプ判定をスキップ
+    if (e.touches.length > 1) return;
+    
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  // タッチ終了時
+  main.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].clientX;
+    touchEndY = e.changedTouches[0].clientY;
+    handleSwipe();
+  }, { passive: true });
+
+  // スワイプ判定と画面切り替え実行
+  function handleSwipe() {
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    // 横方向の移動距離が60px以上かつ、縦方向より横方向の移動が大きい場合のみスワイプと判定
+    const minSwipeDistance = 60;
+    if (Math.abs(diffX) > minSwipeDistance && Math.abs(diffX) > Math.abs(diffY)) {
+      const currentIndex = getCurrentViewIndex();
+
+      if (diffX < 0) {
+        // 左スワイプ（次の画面へ）
+        if (currentIndex < viewsCount - 1) {
+          switchTab(currentIndex + 1);
+        }
+      } else {
+        // 右スワイプ（前の画面へ）
+        if (currentIndex > 0) {
+          switchTab(currentIndex - 1);
+        }
+      }
+    }
+  }
+
+  // 画面（タブ）を切り替える関数（既存のナビボタンクリックと同等の処理を発火）
+  function switchTab(targetIndex) {
+    const targetBtn = document.querySelector(`.bottom-nav .nav-btn[data-target="${targetIndex}"]`);
+    if (targetBtn) {
+      targetBtn.click();
+    }
+  }
+});
