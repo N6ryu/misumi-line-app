@@ -56,7 +56,7 @@ function getRoutePoints() {
     });
     if (points.length > 1) return points;
   }
-  if (typeof stations !== "undefined") {
+  if (typeof stations !== "undefined" && Array.isArray(stations)) {
     return stations.map(s => [s.lat, s.lng]);
   }
   return [];
@@ -64,7 +64,7 @@ function getRoutePoints() {
 
 function mapProjection() {
   const route = getRoutePoints();
-  const stationList = typeof stations !== "undefined" ? stations : [];
+  const stationList = (typeof stations !== "undefined" && Array.isArray(stations)) ? stations : [];
   const all = route.concat(stationList.map(s => [s.lat, s.lng]));
   
   if (!all.length) return { width: 720, height: 500, project: () => [0, 0] };
@@ -95,7 +95,7 @@ function initMap() {
   const { width, height, project } = mapProjection();
   const routePointsStr = routePointsArr.map(p => project(p[0], p[1]).join(",")).join(" ");
 
-  const stationSvg = (typeof stations !== "undefined" ? stations : []).map(s => {
+  const stationSvg = (typeof stations !== "undefined" && Array.isArray(stations) ? stations : []).map(s => {
     const [x, y] = project(s.lat, s.lng);
     const isEnd = x > width * 0.72;
     const anchor = isEnd ? "end" : "start";
@@ -124,9 +124,9 @@ function renderMap(trains) {
 
   const { project } = mapProjection();
   layer.innerHTML = trains.map(t => {
-    if (!t.lat || !t.lng) return "";
+    if (!t || !t.lat || !t.lng) return "";
     const [x, y] = project(t.lat, t.lng);
-    const labelText = `${t.id} ${typeof statusText === "function" ? statusText(t) : (t.delayMinutes ? t.delayMinutes + "分遅れ" : "定刻")}`;
+    const labelText = `${t.id || ''} ${typeof statusText === "function" ? statusText(t) : (t.delayMinutes ? t.delayMinutes + "分遅れ" : "定刻")}`;
     return `
       <g class="svg-train" transform="translate(${x} ${y})">
         <circle class="svg-train-circle" r="14"></circle>
@@ -233,7 +233,7 @@ function renderNextTrains() {
 
 function renderVerticalRoute(trains) {
   const route = document.getElementById("verticalRoute");
-  if (!route || typeof stations === "undefined") return;
+  if (!route || typeof stations === "undefined" || !Array.isArray(stations)) return;
 
   const ordered = currentNaviDirection === "toKumamoto" ? [...stations].reverse() : [...stations];
   route.innerHTML = ordered.map((station, i) => `
@@ -263,32 +263,17 @@ function renderConnectionView() {
 }
 
 // ==========================================================================
-// 5. ボトムシート制御
+// 5. スプラッシュ画面を閉じる安全関数
 // ==========================================================================
-function openBottomSheet(contentHtml) {
-  if (!sheet || !sheetBackdrop) return;
-  const body = document.getElementById("sheetBody");
-  if (body && contentHtml) body.innerHTML = contentHtml;
-
-  sheetBackdrop.hidden = false;
-  sheet.hidden = false;
-  
-  // トランジション適用のための遅延クラス付与
-  requestAnimationFrame(() => {
-    sheetBackdrop.classList.add("open");
-    sheet.classList.add("open");
-  });
-}
-
-function closeBottomSheet() {
-  if (!sheet || !sheetBackdrop) return;
-  sheetBackdrop.classList.remove("open");
-  sheet.classList.remove("open");
-
-  setTimeout(() => {
-    sheetBackdrop.hidden = true;
-    sheet.hidden = true;
-  }, 200);
+function dismissSplashScreen() {
+  const splash = splashScreen || document.getElementById("splashScreen");
+  if (splash) {
+    splash.classList.add("hide");
+    document.body.classList.remove("splash-active");
+    setTimeout(() => {
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+    }, 350);
+  }
 }
 
 // ==========================================================================
@@ -316,11 +301,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (jumpBtn) {
     jumpBtn.addEventListener("click", () => setView(3));
   }
-
-  // ボトムシート閉じるボタン
-  const sheetCloseBtn = document.getElementById("sheetClose");
-  if (sheetCloseBtn) sheetCloseBtn.addEventListener("click", closeBottomSheet);
-  if (sheetBackdrop) sheetBackdrop.addEventListener("click", closeBottomSheet);
 
   // タッチスワイプ操作による画面切り替え
   let startX = 0;
@@ -361,10 +341,18 @@ document.addEventListener("DOMContentLoaded", () => {
       mojiBtn.textContent = fontScales[currentScaleIndex].label;
     });
   }
+
+  // 初期化開始
+  init();
 });
 
 // アプリ全体の非同期データロード＆起動処理
 async function init() {
+  // 安全装置：データロードや各種エラーに関わらず、2.5秒後には絶対にロード画面を解除する
+  const forceDismissTimer = setTimeout(() => {
+    dismissSplashScreen();
+  }, 2500);
+
   try {
     if (typeof loadTrainData === "function") {
       loadedTrains = await loadTrainData();
@@ -373,21 +361,20 @@ async function init() {
     console.warn("データロード警告:", e);
   }
 
-  renderNextTrains();
-  renderVerticalRoute(loadedTrains);
-  renderConnectionView();
-  initMap();
-  renderMap(loadedTrains);
-  initTimetable();
-
-  // スプラッシュ画面を非表示化
-  if (splashScreen) {
-    setTimeout(() => {
-      splashScreen.classList.add("hide");
-      document.body.classList.remove("splash-active");
-      setTimeout(() => splashScreen.remove(), 350);
-    }, 1200);
+  try {
+    renderNextTrains();
+    renderVerticalRoute(loadedTrains);
+    renderConnectionView();
+    initMap();
+    renderMap(loadedTrains);
+    initTimetable();
+  } catch (e) {
+    console.error("UI初期化中のエラー:", e);
   }
-}
 
-init();
+  // 1秒待機後に正常解除
+  setTimeout(() => {
+    clearTimeout(forceDismissTimer);
+    dismissSplashScreen();
+  }, 1000);
+}
