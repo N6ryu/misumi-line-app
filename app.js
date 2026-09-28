@@ -1,25 +1,80 @@
-
 let currentView = 0;
 let currentNaviDirection = "toKumamoto";
 let currentTimetableDirection = "toKumamoto";
 let mapReady = false;
 let loadedTrains = [];
 
-const views = [...document.querySelectorAll(".view")];
+const viewsWrapper = document.querySelector(".views-wrapper");
 const navButtons = [...document.querySelectorAll(".nav-btn")];
 const splashScreen = document.getElementById("splashScreen");
 const sheet = document.getElementById("bottomSheet");
 const sheetBackdrop = document.getElementById("sheetBackdrop");
 
+// 画面切り替えの共通関数（旧setViewとswitchTabを統合）
 function setView(index) {
   currentView = Math.max(0, Math.min(3, index));
-  views.forEach((v, i) => v.classList.toggle("active", i === currentView));
+
+  // 1. 横スライド位置を変更 (0%, -25%, -50%, -75%)
+  if (viewsWrapper) {
+    viewsWrapper.style.transform = `translateX(-${currentView * 25}%)`;
+  }
+
+  // 2. ナビゲーションボタンのアクティブ状態を更新
   navButtons.forEach((b, i) => b.classList.toggle("active", i === currentView));
   document.body.dataset.view = String(currentView);
-  if (currentView === 2) setTimeout(() => { initMap(); renderMap(loadedTrains); }, 40);
+
+  // 3. 路線図タブ（3番目 / index: 2）を開いたときにマップを描画
+  if (currentView === 2) {
+    setTimeout(() => {
+      initMap();
+      renderMap(loadedTrains);
+    }, 40);
+  }
 }
-navButtons.forEach(btn => btn.addEventListener("click", () => setView(Number(btn.dataset.target))));
-document.getElementById("jumpTimetableBtn").addEventListener("click", () => setView(3));
+
+// ナビゲーションボタンのクリックイベント
+navButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.dataset.target !== undefined ? Number(btn.dataset.target) : navButtons.indexOf(btn);
+    setView(target);
+  });
+});
+
+// 時刻表へジャンプするボタン
+const jumpTimetableBtn = document.getElementById("jumpTimetableBtn");
+if (jumpTimetableBtn) {
+  jumpTimetableBtn.addEventListener("click", () => setView(3));
+}
+
+// --- スワイプ（フリック）ジェスチャー対応 ---
+let startX = 0;
+let isSwiping = false;
+const mainArea = document.querySelector(".app-main");
+
+if (mainArea) {
+  mainArea.addEventListener("touchstart", (e) => {
+    startX = e.touches[0].clientX;
+    isSwiping = true;
+  }, { passive: true });
+
+  mainArea.addEventListener("touchend", (e) => {
+    if (!isSwiping) return;
+    const endX = e.changedTouches[0].clientX;
+    const diffX = startX - endX;
+
+    // 50px以上スワイプしたら画面切り替え
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0 && currentView < 3) {
+        // 左スワイプ（次の画面へ）
+        setView(currentView + 1);
+      } else if (diffX < 0 && currentView > 0) {
+        // 右スワイプ（前の画面へ）
+        setView(currentView - 1);
+      }
+    }
+    isSwiping = false;
+  }, { passive: true });
+}
 
 function trainIllustration(train) {
   if (train.serviceKind === "ds" || /A列車/.test(train.serviceName || "")) {
@@ -43,10 +98,12 @@ function matchingTimetableKey() {
 }
 
 function renderNextTrains() {
-  const stationName = document.getElementById("favoriteStationName").textContent || "三角";
+  const stationName = document.getElementById("favoriteStationName")?.textContent || "三角";
   const data = timetableData[stationName]?.[matchingTimetableKey()] || [];
   const items = data.slice(0, 3);
   const wrap = document.getElementById("nextTrainStrip");
+
+  if (!wrap) return;
 
   if (!items.length) {
     wrap.innerHTML = `<div class="empty-state">この方面の列車はありません。</div>`;
@@ -69,7 +126,6 @@ function trainPlacement(train, orderedStations) {
   if (isTerminalStopped(train) || nextIndex < 0 || currentIndex === nextIndex) {
     return { stationIndex: currentIndex, progress: 0 };
   }
-  // routePositionIndex は熊本→三角の順。表示順に合わせて割合へ変換。
   const base = train.positionIndex;
   const displayPos = currentNaviDirection === "toKumamoto"
     ? (stations.length - 1) - base
@@ -86,6 +142,8 @@ function trainTimeText(train) {
 
 function renderVerticalRoute(trains) {
   const route = document.getElementById("verticalRoute");
+  if (!route) return;
+
   const ordered = getVisibleOrder();
   const moving = trains.filter(t => {
     if (currentNaviDirection === "toKumamoto") return t.direction === "熊本方面" || isTerminalStopped(t);
@@ -179,8 +237,10 @@ function closeSheet() {
     sheetBackdrop.hidden = true;
   }, 180);
 }
-document.getElementById("sheetClose").addEventListener("click", closeSheet);
-sheetBackdrop.addEventListener("click", closeSheet);
+
+const sheetCloseBtn = document.getElementById("sheetClose");
+if (sheetCloseBtn) sheetCloseBtn.addEventListener("click", closeSheet);
+if (sheetBackdrop) sheetBackdrop.addEventListener("click", closeSheet);
 
 function connectionCards(stationName) {
   const items = connectionSamples[stationName] || [];
@@ -257,6 +317,7 @@ function openTrainSheet(trainId) {
 
 function renderConnectionView() {
   const list = document.getElementById("connectionList");
+  if (!list) return;
   list.innerHTML = (connectionSamples["熊本"] || []).map(c => `
     <article class="connection-item large">
       <strong>${c.time}</strong>
@@ -334,28 +395,43 @@ function renderMap(trains) {
 
 function initTimetable() {
   const select = document.getElementById("stationSelect");
+  if (!select) return;
   select.innerHTML = stations.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
   select.value = "三角";
   select.addEventListener("change", renderTimetable);
-  document.getElementById("toMisumiBtn").addEventListener("click", () => {
-    currentTimetableDirection = "toMisumi"; syncDirectionButtons(); renderTimetable();
-  });
-  document.getElementById("toKumamotoBtn").addEventListener("click", () => {
-    currentTimetableDirection = "toKumamoto"; syncDirectionButtons(); renderTimetable();
-  });
+  
+  const toMisumiBtn = document.getElementById("toMisumiBtn");
+  const toKumamotoBtn = document.getElementById("toKumamotoBtn");
+
+  if (toMisumiBtn) {
+    toMisumiBtn.addEventListener("click", () => {
+      currentTimetableDirection = "toMisumi"; syncDirectionButtons(); renderTimetable();
+    });
+  }
+  if (toKumamotoBtn) {
+    toKumamotoBtn.addEventListener("click", () => {
+      currentTimetableDirection = "toKumamoto"; syncDirectionButtons(); renderTimetable();
+    });
+  }
   syncDirectionButtons();
   renderTimetable();
 }
 
 function syncDirectionButtons() {
-  document.getElementById("toMisumiBtn").classList.toggle("active", currentTimetableDirection === "toMisumi");
-  document.getElementById("toKumamotoBtn").classList.toggle("active", currentTimetableDirection === "toKumamoto");
+  const toMisumiBtn = document.getElementById("toMisumiBtn");
+  const toKumamotoBtn = document.getElementById("toKumamotoBtn");
+  if (toMisumiBtn) toMisumiBtn.classList.toggle("active", currentTimetableDirection === "toMisumi");
+  if (toKumamotoBtn) toKumamotoBtn.classList.toggle("active", currentTimetableDirection === "toKumamoto");
 }
 
 function renderTimetable() {
-  const station = document.getElementById("stationSelect").value;
+  const select = document.getElementById("stationSelect");
+  if (!select) return;
+  const station = select.value;
   const rows = timetableData[station]?.[currentTimetableDirection] || [];
-  document.getElementById("timetable").innerHTML = rows.length
+  const timetableEl = document.getElementById("timetable");
+  if (!timetableEl) return;
+  timetableEl.innerHTML = rows.length
     ? `<div class="timetable-list">${rows.map(([time,kind]) => `<div class="timetable-row"><strong>${time}</strong><span>${kind}</span></div>`).join("")}</div>`
     : `<div class="empty-state">この方面の列車はありません。</div>`;
 }
@@ -367,7 +443,10 @@ document.querySelectorAll(".seg-btn").forEach(btn => btn.addEventListener("click
   renderVerticalRoute(loadedTrains);
 }));
 
-document.getElementById("favoriteStationBtn").addEventListener("click", () => openStationSheet(document.getElementById("favoriteStationName").textContent));
+const favBtn = document.getElementById("favoriteStationBtn");
+if (favBtn) {
+  favBtn.addEventListener("click", () => openStationSheet(document.getElementById("favoriteStationName").textContent));
+}
 
 async function init() {
   loadedTrains = await loadTrainData();
@@ -378,11 +457,13 @@ async function init() {
   renderMap(loadedTrains);
   initTimetable();
 
-  setTimeout(() => {
-    splashScreen.classList.add("hide");
-    document.body.classList.remove("splash-active");
-    setTimeout(() => splashScreen.remove(), 350);
-  }, 1800);
+  if (splashScreen) {
+    setTimeout(() => {
+      splashScreen.classList.add("hide");
+      document.body.classList.remove("splash-active");
+      setTimeout(() => splashScreen.remove(), 350);
+    }, 1800);
+  }
 }
 
 init().catch(err => {
@@ -390,30 +471,22 @@ init().catch(err => {
   document.body.classList.remove("splash-active");
 });
 
-// 切り替えるサイズとボタンの表示テキストのリスト
+// 文字サイズ変更機能
 const fontScales = [
   { scale: 1.0,  label: '文字サイズ: 標準' },
   { scale: 1.2,  label: '文字サイズ: 大' },
   { scale: 0.85, label: '文字サイズ: 小' }
 ];
 
-let currentScaleIndex = 0; // 初期状態（0 = 標準）
+let currentScaleIndex = 0;
 
-// ボタンとクリックイベントの設定
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('Mojibtn');
-
   if (btn) {
     btn.addEventListener('click', () => {
-      // 次のサイズにインデックスを進める（最後までいったら0に戻る）
       currentScaleIndex = (currentScaleIndex + 1) % fontScales.length;
-
       const current = fontScales[currentScaleIndex];
-
-      // 1. CSS変数を書き換えて文字サイズを変更
       document.documentElement.style.setProperty('--font-scale', current.scale);
-
-      // 2. ボタンの表示テキストを変更
       btn.textContent = current.label;
     });
   }
