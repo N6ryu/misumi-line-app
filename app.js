@@ -1,350 +1,440 @@
-let currentView = 0;
-let currentNaviDirection = "toKumamoto";
-let currentTimetableDirection = "toKumamoto";
-let mapReady = false;
-let loadedTrains = [];
+let selectedStation=null,loadedTrains=[],currentView=0;
+let simpleMapState={
+  zoom:10,
+  centerLat:32.700,
+  centerLng:130.585,
+  dragging:false,
+  startX:0,
+  startY:0,
+  startCenterPx:null
+};
 
-// 要素の取得
-const viewsWrapper = document.querySelector(".views-wrapper");
-const navButtons = [...document.querySelectorAll(".nav-btn")];
-const splashScreen = document.getElementById("splashScreen");
-const sheet = document.getElementById("bottomSheet");
-const sheetBackdrop = document.getElementById("sheetBackdrop");
+const gate=document.getElementById("stationGate");
+const views=[...document.querySelectorAll(".view")];
+const navButtons=[...document.querySelectorAll(".nav-btn[data-target]")];
+const bottomNav=document.getElementById("bottomNav");
+const stationFab=document.getElementById("stationFab");
+const sheet=document.getElementById("bottomSheet");
+const backdrop=document.getElementById("sheetBackdrop");
+const stationModal=document.getElementById("stationModal");
+const stationModalBackdrop=document.getElementById("stationModalBackdrop");
 
-// --------------------------------------------------
-// 1. 画面切り替え（スライド & ナビ制御）
-// --------------------------------------------------
-function setView(index) {
-  currentView = Math.max(0, Math.min(3, index));
-
-  const wrapper = document.querySelector(".views-wrapper");
-  if (wrapper) {
-    wrapper.style.transform = `translateX(-${currentView * 25}%)`;
+function setView(i){
+  currentView=Math.max(0,Math.min(2,i));
+  gate.hidden=true;
+  views.forEach((v,n)=>v.classList.toggle("active",n===currentView));
+  navButtons.forEach((b,n)=>b.classList.toggle("active",n===currentView));
+  if(currentView===0&&selectedStation)setTimeout(()=>scrollToSelectedStation(false),80);
+  if(currentView===1){
+    setTimeout(()=>{
+      resetSimpleMapToRoute();
+      renderSimpleMap();
+    },80);
   }
-
-  const btns = document.querySelectorAll(".nav-btn");
-  btns.forEach((b, i) => b.classList.toggle("active", i === currentView));
-  document.body.dataset.view = String(currentView);
-
-  // 地図タブ（index: 2）を開いたときにマップを初期化＆描画
-  if (currentView === 2) {
-    setTimeout(() => {
-      initMap();
-      renderMap(loadedTrains);
-    }, 50);
+  if(currentView===2){
+    if(selectedStation) setTimetableStation(selectedStation);
+    renderTimetable();
   }
 }
+navButtons.forEach(b=>b.addEventListener("click",()=>setView(Number(b.dataset.target))));
 
-// --------------------------------------------------
-// 2. 地図描画（route-geometry.js を活用したSVG路線図）
-// --------------------------------------------------
-function getRoutePoints() {
-  // route-geometry.js の lightweightRouteSegments を参照
-  if (typeof lightweightRouteSegments !== "undefined" && Array.isArray(lightweightRouteSegments) && lightweightRouteSegments.length) {
-    const points = [];
-    lightweightRouteSegments.forEach((seg, segIndex) => {
-      if (!seg || !Array.isArray(seg.points)) return;
-      seg.points.forEach((p, i) => {
-        if (segIndex > 0 && i === 0) return;
-        if (Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1])) {
-          points.push(p);
-        }
-      });
+function showGate(){
+  views.forEach(v=>v.classList.remove("active"));
+  gate.hidden=false;
+  bottomNav.hidden=true;
+  stationFab.hidden=true;
+}
+
+function stationButtonHTML(s){
+  return `<button class="station-pick-btn" data-station="${s.name}">
+    <span class="station-mark"></span><strong>${s.name}</strong>
+  </button>`;
+}
+
+function renderStationGrid(){
+  const e=document.getElementById("stationGrid");
+  e.innerHTML=stations.map(stationButtonHTML).join("");
+  e.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>selectStation(b.dataset.station)));
+
+  const tt=document.getElementById("ttStationGrid");
+  tt.innerHTML=stations.map(stationButtonHTML).join("");
+  tt.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>{
+    setTimetableStation(b.dataset.station);
+    closeStationModal();
+  }));
+}
+
+function selectStation(name){
+  selectedStation=name;
+  bottomNav.hidden=false;
+  stationFab.hidden=false;
+  setTimetableStation(name);
+  renderDualRoute();
+  setView(0);
+  setTimeout(()=>scrollToSelectedStation(true),180);
+}
+
+function scrollToSelectedStation(smooth=true){
+  if(!selectedStation)return;
+  const scroller=document.getElementById("positionScroller");
+  const target=document.querySelector(`.route-node[data-station="${selectedStation}"]`);
+  if(!scroller||!target)return;
+  const sr=scroller.getBoundingClientRect(),tr=target.getBoundingClientRect();
+  const desired=tr.top-sr.top+scroller.scrollTop-(scroller.clientHeight*.46)+(tr.height/2);
+  scroller.scrollTo({top:Math.max(0,desired),behavior:smooth?"smooth":"auto"});
+}
+
+const routeSide=t=>(t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
+
+function trainChip(t){
+  const side=routeSide(t);
+  const icon=side==="up"?"./assets/train-up.gif?v=32":"./assets/train-down.gif?v=32";
+  const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
+  return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
+    <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
+    <span class="train-chip-copy"><strong>${t.id}</strong><small>${state}</small></span>
+  </button>`;
+}
+
+function renderDualRoute(){
+  const e=document.getElementById("dualRoute");
+  let h="";
+  stations.forEach((s,i)=>{
+    const at=loadedTrains.filter(t=>{
+      if(t.currentStation===t.nextStation)return t.currentStation===s.name;
+      return t.positionIndex>=i&&t.positionIndex<i+1;
     });
-    if (points.length > 1) return points;
-  }
-  // フォールバック：stations データより座標を抽出
-  if (typeof stations !== "undefined") {
-    return stations.map(s => [s.lat, s.lng]);
-  }
-  return [];
+    const left=at.filter(t=>routeSide(t)==="up");
+    const right=at.filter(t=>routeSide(t)==="down");
+    h+=`<div class="route-node ${s.name===selectedStation?"selected":""}" data-station="${s.name}">
+      <div class="side left">${left.map(trainChip).join("")}</div>
+      <button class="center-station" data-station-button="${s.name}"><i></i><strong>${s.name}</strong></button>
+      <div class="side right">${right.map(trainChip).join("")}</div>
+    </div>`;
+  });
+  e.innerHTML=h;
+  e.querySelectorAll("[data-train]").forEach(b=>b.addEventListener("click",()=>openTrainDetail(b.dataset.train)));
+  e.querySelectorAll("[data-station-button]").forEach(b=>b.addEventListener("click",()=>selectStation(b.dataset.stationButton)));
 }
 
-function mapProjection() {
-  const route = getRoutePoints();
-  const stationList = typeof stations !== "undefined" ? stations : [];
-  const all = route.concat(stationList.map(s => [s.lat, s.lng]));
-  
-  if (!all.length) return { width: 720, height: 500, project: (lat, lng) => [0, 0] };
+function openSheet(title,body){
+  document.getElementById("sheetTitle").textContent=title;
+  document.getElementById("sheetBody").innerHTML=body;
+  sheet.hidden=false;backdrop.hidden=false;
+  requestAnimationFrame(()=>{sheet.classList.add("open");backdrop.classList.add("open")});
+}
+function closeSheet(){
+  sheet.classList.remove("open");backdrop.classList.remove("open");
+  setTimeout(()=>{sheet.hidden=true;backdrop.hidden=true},180);
+}
+document.getElementById("sheetClose").addEventListener("click",closeSheet);
+backdrop.addEventListener("click",closeSheet);
 
-  const lats = all.map(p => p[0]);
-  const lngs = all.map(p => p[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  
-  const pad = 40, width = 720, height = 500;
-  const project = (lat, lng) => [
-    pad + ((lng - minLng) / Math.max(0.000001, maxLng - minLng)) * (width - pad * 2),
-    pad + ((maxLat - lat) / Math.max(0.000001, maxLat - minLat)) * (height - pad * 2)
-  ];
-  return { width, height, project };
+function openTrainDetail(id){
+  const t=loadedTrains.find(x=>x.id===id);if(!t)return;
+  const rows=t.timetable.map((r,i)=>{
+    const isStart=i===0&&t.operationalState==="出発待ち";
+    const final=i===t.timetable.length-1&&!isStart;
+    const time=isStart?(r.departure||r.arrival):(final?(r.arrival||r.departure):(r.departure||r.arrival));
+    return `<div class="schedule-row ${final?"final":""}">
+      <span class="schedule-dot"></span>
+      <div><strong>${r.station}</strong><small>${isStart?"出発待ち":(final?"終着":"停車駅")}</small></div>
+      <b>${time||"—"}</b><em>${isStart?"発":(final?"着":"発")}</em>
+    </div>`;
+  }).join("");
+  openSheet(`${t.id} ${t.nickname}`,`
+    <div class="train-detail-summary">
+      <div><span>現在位置</span><strong>${t.currentStation===t.nextStation?t.currentStation+"駅":t.currentStation+" → "+t.nextStation}</strong></div>
+      <div><span>方面</span><strong>${t.displayDirection}</strong></div>
+      <div><span>状態</span><strong>${t.operationalState}</strong></div>
+    </div>
+    <h3 class="sheet-subtitle">ここから終着駅までの予定</h3>
+    <div class="remaining-schedule">${rows}</div>
+    ${t.operationalState==="出発待ち"?'<div class="inference-note"><strong>判定：</strong>ビーコン発信から5分以上経過し、三角駅に停車したままのため「上り・出発待ち」と判定しています。</div>':""}
+    <p class="source-note">${t.timetableNote}</p>`);
 }
 
-function initMap() {
-  const mapEl = document.getElementById("map");
-  if (!mapEl) return;
-  
-  const routePointsArr = getRoutePoints();
-  if (!routePointsArr.length) {
-    mapEl.innerHTML = `<div class="empty-state">地図データの読み込み待ちです。</div>`;
-    return;
+// Simple OSM map: external libraryなしでタイルと緯度経度を同期
+const TILE_SIZE=256;
+
+function lonToWorldX(lon,zoom){
+  return ((lon+180)/360)*TILE_SIZE*Math.pow(2,zoom);
+}
+function latToWorldY(lat,zoom){
+  const sin=Math.sin(lat*Math.PI/180);
+  return (0.5-Math.log((1+sin)/(1-sin))/(4*Math.PI))*TILE_SIZE*Math.pow(2,zoom);
+}
+function worldXToLon(x,zoom){
+  return x/(TILE_SIZE*Math.pow(2,zoom))*360-180;
+}
+function worldYToLat(y,zoom){
+  const n=Math.PI-2*Math.PI*y/(TILE_SIZE*Math.pow(2,zoom));
+  return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));
+}
+
+function routeBounds(){
+  const lats=stations.map(s=>s.lat);
+  const lngs=stations.map(s=>s.lng);
+  return {
+    minLat:Math.min(...lats), maxLat:Math.max(...lats),
+    minLng:Math.min(...lngs), maxLng:Math.max(...lngs)
+  };
+}
+
+function resetSimpleMapToRoute(){
+  const el=document.getElementById("simpleMap");
+  if(!el)return;
+  const b=routeBounds();
+  const width=Math.max(280,el.clientWidth);
+  const height=Math.max(360,el.clientHeight);
+  const pad=34;
+
+  let chosen=9;
+  for(let z=13;z>=7;z--){
+    const x1=lonToWorldX(b.minLng,z),x2=lonToWorldX(b.maxLng,z);
+    const y1=latToWorldY(b.maxLat,z),y2=latToWorldY(b.minLat,z);
+    if((x2-x1)<=width-pad*2 && (y2-y1)<=height-pad*2){
+      chosen=z;break;
+    }
   }
+  simpleMapState.zoom=chosen;
+  simpleMapState.centerLat=(b.minLat+b.maxLat)/2;
+  simpleMapState.centerLng=(b.minLng+b.maxLng)/2;
+}
 
-  const { width, height, project } = mapProjection();
-  const routePointsStr = routePointsArr.map(p => project(p[0], p[1]).join(",")).join(" ");
+function mapScreenPoint(lat,lng){
+  const el=document.getElementById("simpleMap");
+  const z=simpleMapState.zoom;
+  const cx=lonToWorldX(simpleMapState.centerLng,z);
+  const cy=latToWorldY(simpleMapState.centerLat,z);
+  return {
+    x:lonToWorldX(lng,z)-cx+el.clientWidth/2,
+    y:latToWorldY(lat,z)-cy+el.clientHeight/2
+  };
+}
 
-  const stationSvg = (typeof stations !== "undefined" ? stations : []).map(s => {
-    const [x, y] = project(s.lat, s.lng);
-    const isEnd = x > width * 0.72;
-    const anchor = isEnd ? "end" : "start";
-    const textX = x + (isEnd ? -10 : 10);
-    return `
-      <g class="svg-station">
-        <circle cx="${x}" cy="${y}" r="6" fill="#1e293b" stroke="#ffffff" stroke-width="2"></circle>
-        <text x="${textX}" y="${y + 4}" text-anchor="${anchor}" font-size="12" font-weight="bold" fill="#334155">${s.name}</text>
-      </g>`;
+function renderTiles(){
+  const el=document.getElementById("simpleMap");
+  const layer=document.getElementById("mapTiles");
+  if(!el||!layer)return;
+
+  const z=simpleMapState.zoom;
+  const cx=lonToWorldX(simpleMapState.centerLng,z);
+  const cy=latToWorldY(simpleMapState.centerLat,z);
+  const left=cx-el.clientWidth/2;
+  const top=cy-el.clientHeight/2;
+  const right=cx+el.clientWidth/2;
+  const bottom=cy+el.clientHeight/2;
+
+  const minTX=Math.floor(left/TILE_SIZE)-1;
+  const maxTX=Math.floor(right/TILE_SIZE)+1;
+  const minTY=Math.floor(top/TILE_SIZE)-1;
+  const maxTY=Math.floor(bottom/TILE_SIZE)+1;
+  const maxTile=Math.pow(2,z);
+
+  let html="";
+  for(let tx=minTX;tx<=maxTX;tx++){
+    for(let ty=minTY;ty<=maxTY;ty++){
+      if(ty<0||ty>=maxTile)continue;
+      const wrappedX=((tx%maxTile)+maxTile)%maxTile;
+      const x=tx*TILE_SIZE-left;
+      const y=ty*TILE_SIZE-top;
+      html+=`<img class="osm-tile" src="https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png"
+        style="left:${x}px;top:${y}px" alt="">`;
+    }
+  }
+  layer.innerHTML=html;
+}
+
+function renderRouteAndMarkers(){
+  const svg=document.getElementById("mapRouteSvg");
+  const markers=document.getElementById("mapMarkers");
+  const map=document.getElementById("simpleMap");
+  if(!svg||!markers||!map)return;
+
+  svg.setAttribute("viewBox",`0 0 ${map.clientWidth} ${map.clientHeight}`);
+  svg.setAttribute("width",map.clientWidth);
+  svg.setAttribute("height",map.clientHeight);
+
+  const pts=stations.map(s=>{
+    const p=mapScreenPoint(s.lat,s.lng);
+    return `${p.x},${p.y}`;
+  }).join(" ");
+
+  const stationSvg=stations.map(s=>{
+    const p=mapScreenPoint(s.lat,s.lng);
+    return `<g>
+      <circle cx="${p.x}" cy="${p.y}" r="4.5" class="map-station-dot"></circle>
+      <text x="${p.x+6}" y="${p.y-5}" class="map-station-label">${s.name}</text>
+    </g>`;
   }).join("");
 
-  mapEl.innerHTML = `
-    <svg id="routeSvgMap" class="svg-route-map" viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; background:#f8fafc; border-radius:12px;" aria-label="熊本から三角までの路線図">
-      <polyline points="${routePointsStr}" fill="none" stroke="#cbd5e1" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-      <polyline points="${routePointsStr}" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-      ${stationSvg}
-      <g id="svgTrainLayer"></g>
-    </svg>`;
-  mapReady = true;
-}
+  svg.innerHTML=`<polyline points="${pts}" class="map-route-line"></polyline>${stationSvg}`;
 
-function renderMap(trains) {
-  if (!mapReady) initMap();
-  const layer = document.getElementById("svgTrainLayer");
-  if (!layer || !Array.isArray(trains)) return;
-
-  const { project } = mapProjection();
-  layer.innerHTML = trains.map(t => {
-    if (!t.lat || !t.lng) return "";
-    const [x, y] = project(t.lat, t.lng);
-    const labelText = `${t.id} ${typeof statusText === "function" ? statusText(t) : (t.delayMinutes ? t.delayMinutes + "分遅れ" : "定刻")}`;
-    return `
-      <g class="svg-train" transform="translate(${x} ${y})">
-        <circle r="14" fill="#ef4444" stroke="#ffffff" stroke-width="2"></circle>
-        <text x="0" y="4" text-anchor="middle" font-size="12">🚃</text>
-        <rect x="-40" y="-38" width="80" height="20" rx="10" fill="#1e293b" opacity="0.85"></rect>
-        <text x="0" y="-24" text-anchor="middle" font-size="10" fill="#ffffff" font-weight="bold">${labelText}</text>
-      </g>`;
+  markers.innerHTML=loadedTrains.map(t=>{
+    const p=mapScreenPoint(t.latitude,t.longitude);
+    const side=routeSide(t);
+    const icon=side==="up"?"./assets/train-up.gif?v=35":"./assets/train-down.gif?v=35";
+    const label=t.operationalState==="出発待ち" ? `出発待ち ${t.inferredDeparture||""}`.trim() : t.id;
+    return `<button class="simple-train-marker" data-train="${t.id}"
+      style="left:${p.x}px;top:${p.y}px">
+      <img src="${icon}" alt="${t.id}">
+      <span>${label}</span>
+    </button>`;
   }).join("");
+
+  markers.querySelectorAll("[data-train]").forEach(b=>
+    b.addEventListener("click",e=>{
+      e.stopPropagation();
+      openTrainDetail(b.dataset.train);
+    })
+  );
 }
 
-// --------------------------------------------------
-// 3. 時刻表描画（mock-data.js の timetableData を参照）
-// --------------------------------------------------
-function initTimetable() {
-  const select = document.getElementById("stationSelect");
-  if (!select) return;
+function renderSimpleMap(){
+  renderTiles();
+  renderRouteAndMarkers();
+}
 
-  if (typeof stations !== "undefined" && Array.isArray(stations)) {
-    select.innerHTML = stations.map(s => `<option value="${s.name}">${s.name}</option>`).join("");
-    select.value = "三角";
-  }
+function zoomSimpleMap(delta){
+  simpleMapState.zoom=Math.max(7,Math.min(15,simpleMapState.zoom+delta));
+  renderSimpleMap();
+}
 
-  select.removeEventListener("change", renderTimetable);
-  select.addEventListener("change", renderTimetable);
+function setupSimpleMapInteraction(){
+  const map=document.getElementById("simpleMap");
+  if(!map)return;
 
-  const toMisumiBtn = document.getElementById("toMisumiBtn");
-  const toKumamotoBtn = document.getElementById("toKumamotoBtn");
-
-  if (toMisumiBtn) {
-    toMisumiBtn.onclick = () => {
-      currentTimetableDirection = "toMisumi";
-      syncTimetableButtons();
-      renderTimetable();
+  map.addEventListener("pointerdown",e=>{
+    simpleMapState.dragging=true;
+    simpleMapState.startX=e.clientX;
+    simpleMapState.startY=e.clientY;
+    simpleMapState.startCenterPx={
+      x:lonToWorldX(simpleMapState.centerLng,simpleMapState.zoom),
+      y:latToWorldY(simpleMapState.centerLat,simpleMapState.zoom)
     };
-  }
-  if (toKumamotoBtn) {
-    toKumamotoBtn.onclick = () => {
-      currentTimetableDirection = "toKumamoto";
-      syncTimetableButtons();
-      renderTimetable();
-    };
-  }
-  syncTimetableButtons();
+    map.setPointerCapture(e.pointerId);
+  });
+
+  map.addEventListener("pointermove",e=>{
+    if(!simpleMapState.dragging)return;
+    const dx=e.clientX-simpleMapState.startX;
+    const dy=e.clientY-simpleMapState.startY;
+    const cx=simpleMapState.startCenterPx.x-dx;
+    const cy=simpleMapState.startCenterPx.y-dy;
+    simpleMapState.centerLng=worldXToLon(cx,simpleMapState.zoom);
+    simpleMapState.centerLat=worldYToLat(cy,simpleMapState.zoom);
+    renderSimpleMap();
+  });
+
+  map.addEventListener("pointerup",()=>simpleMapState.dragging=false);
+  map.addEventListener("pointercancel",()=>simpleMapState.dragging=false);
+
+  map.addEventListener("wheel",e=>{
+    e.preventDefault();
+    zoomSimpleMap(e.deltaY<0?1:-1);
+  },{passive:false});
+
+  document.getElementById("mapZoomIn")?.addEventListener("click",()=>zoomSimpleMap(1));
+  document.getElementById("mapZoomOut")?.addEventListener("click",()=>zoomSimpleMap(-1));
+  document.getElementById("mapReset")?.addEventListener("click",()=>{
+    resetSimpleMapToRoute();
+    renderSimpleMap();
+  });
+
+  window.addEventListener("resize",()=>{
+    if(currentView===1){
+      resetSimpleMapToRoute();
+      renderSimpleMap();
+    }
+  });
+}
+
+// timetable
+let timetableStation="三角";
+function setTimetableStation(name){
+  timetableStation=name;
+  document.getElementById("ttStationName").textContent=name;
   renderTimetable();
 }
+function renderTimetable(){
+  const data=timetableData[timetableStation]||{up:[],down:[]};
 
-function syncTimetableButtons() {
-  const toMisumiBtn = document.getElementById("toMisumiBtn");
-  const toKumamotoBtn = document.getElementById("toKumamotoBtn");
-  if (toMisumiBtn) toMisumiBtn.classList.toggle("active", currentTimetableDirection === "toMisumi");
-  if (toKumamotoBtn) toKumamotoBtn.classList.toggle("active", currentTimetableDirection === "toKumamoto");
-}
+  const hours={};
+  for(let h=5;h<=23;h++) hours[h]={up:[],down:[]};
 
-function renderTimetable() {
-  const select = document.getElementById("stationSelect");
-  const timetableEl = document.getElementById("timetable");
-  if (!select || !timetableEl) return;
-
-  const stationName = select.value || "三角";
-  
-  // mock-data.js の timetableData から選択駅・方向の時刻表を取得
-  const rows = (typeof timetableData !== "undefined" && timetableData[stationName])
-    ? (timetableData[stationName][currentTimetableDirection] || [])
-    : [];
-
-  if (!rows.length) {
-    timetableEl.innerHTML = `<div class="empty-state" style="padding:20px; text-align:center; color:#64748b;">該当する列車データがありません。</div>`;
-    return;
+  function pushItems(items,side){
+    for(const item of items){
+      const [hh,mm]=item.time.split(":");
+      const h=Number(hh);
+      if(!hours[h]) hours[h]={up:[],down:[]};
+      hours[h][side].push({minute:mm,label:item.label||""});
+    }
   }
 
-  timetableEl.innerHTML = `
-    <div class="timetable-list" style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
-      ${rows.map(([time, kind]) => `
-        <div class="timetable-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f1f5f9; border-radius:8px;">
-          <strong style="font-size:1.1rem; color:#0f172a;">${time}</strong>
-          <span style="font-size:0.9rem; color:#475569; background:#e2e8f0; padding:2px 8px; border-radius:4px;">${kind}</span>
+  pushItems(data.up,"up");
+  pushItems(data.down,"down");
+
+  const rows=Object.entries(hours)
+    .filter(([,v])=>v.up.length||v.down.length)
+    .map(([hour,v])=>`
+      <div class="hour-row">
+        <div class="minute-side up">
+          ${v.up.length ? v.up.map(x=>`
+            <div class="minute-entry" title="${x.label}">
+              <strong>${x.minute}</strong>
+              ${x.label ? `<small>${x.label}</small>` : ""}
+            </div>`).join("") : '<span class="no-train">—</span>'}
         </div>
-      `).join("")}
-    </div>`;
+
+        <div class="hour-center">${hour}</div>
+
+        <div class="minute-side down">
+          ${v.down.length ? v.down.map(x=>`
+            <div class="minute-entry" title="${x.label}">
+              <strong>${x.minute}</strong>
+              ${x.label ? `<small>${x.label}</small>` : ""}
+            </div>`).join("") : '<span class="no-train">—</span>'}
+        </div>
+      </div>`).join("");
+
+  document.getElementById("timetableRows").innerHTML=
+    rows || '<div class="tt-empty">表示できる時刻がありません。</div>';
 }
 
-// --------------------------------------------------
-// 4. その他の UI 補助機能
-// --------------------------------------------------
-function renderNextTrains() {
-  if (typeof timetableData === "undefined") return;
-  const stationName = document.getElementById("favoriteStationName")?.textContent || "三角";
-  const data = timetableData[stationName]?.[currentNaviDirection] || [];
-  const items = data.slice(0, 3);
-  const wrap = document.getElementById("nextTrainStrip");
-  if (!wrap) return;
-
-  if (!items.length) {
-    wrap.innerHTML = `<div class="empty-state">この方面の列車はありません。</div>`;
-    return;
-  }
-  wrap.innerHTML = items.map(([time, kind], i) => `
-    <button type="button" class="next-train-card" data-time="${time}" data-kind="${kind}">
-      <span class="next-order">${i + 1}</span>
-      <strong>${time}</strong>
-      <span>${kind}</span>
-      <small>${currentNaviDirection === "toKumamoto" ? "熊本方面" : "三角方面"}</small>
-    </button>
-  `).join("");
+function openStationModal(){
+  stationModal.hidden=false;stationModalBackdrop.hidden=false;
+  requestAnimationFrame(()=>{stationModal.classList.add("open");stationModalBackdrop.classList.add("open")});
 }
-
-function renderVerticalRoute(trains) {
-  const route = document.getElementById("verticalRoute");
-  if (!route || typeof stations === "undefined") return;
-
-  const ordered = currentNaviDirection === "toKumamoto" ? [...stations].reverse() : [...stations];
-  route.innerHTML = ordered.map((station, i) => `
-    <button type="button" class="station-row ${station.name === "熊本" ? "hub" : ""}" data-station="${station.name}">
-      <span class="station-axis">
-        <i class="station-dot"></i>
-        ${i < ordered.length - 1 ? `<i class="station-line"></i>` : ""}
-      </span>
-      <span class="station-copy">
-        <strong>${station.name}駅</strong>
-        <small>発車時刻を見る <b>›</b></small>
-      </span>
-    </button>
-  `).join("");
+function closeStationModal(){
+  stationModal.classList.remove("open");stationModalBackdrop.classList.remove("open");
+  setTimeout(()=>{stationModal.hidden=true;stationModalBackdrop.hidden=true},160);
 }
+document.getElementById("ttStationButton").addEventListener("click",openStationModal);
+document.getElementById("stationModalClose").addEventListener("click",closeStationModal);
+stationModalBackdrop.addEventListener("click",closeStationModal);
 
-function renderConnectionView() {
-  const list = document.getElementById("connectionList");
-  if (!list || typeof connectionSamples === "undefined") return;
-  list.innerHTML = (connectionSamples["熊本"] || []).map(c => `
-    <article class="connection-item large">
-      <strong>${c.time}</strong>
-      <div><b>${c.line}</b><span>${c.destination}</span></div>
-      <small>乗換 ${c.transferMinutes}分</small>
-    </article>
-  `).join("");
-}
+stationFab.addEventListener("click",showGate);
 
-// --------------------------------------------------
-// 5. DOMContentLoaded & 初期化
-// --------------------------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  // ナビゲーションボタン
-  document.querySelectorAll(".nav-btn").forEach((btn, index) => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const target = btn.dataset.target !== undefined ? Number(btn.dataset.target) : index;
-      setView(target);
-    });
-  });
-
-  // 時刻表ジャンプボタン
-  const jumpBtn = document.getElementById("jumpTimetableBtn");
-  if (jumpBtn) {
-    jumpBtn.addEventListener("click", () => setView(3));
-  }
-
-  // スワイプ操作
-  let startX = 0;
-  const mainArea = document.querySelector(".app-main");
-  if (mainArea) {
-    mainArea.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; }, { passive: true });
-    mainArea.addEventListener("touchend", (e) => {
-      const diffX = startX - e.changedTouches[0].clientX;
-      if (Math.abs(diffX) > 50) {
-        if (diffX > 0 && currentView < 3) setView(currentView + 1);
-        else if (diffX < 0 && currentView > 0) setView(currentView - 1);
-      }
-    }, { passive: true });
-  }
-
-  // 方面スイッチ
-  document.querySelectorAll(".seg-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      currentNaviDirection = btn.dataset.direction;
-      document.querySelectorAll(".seg-btn").forEach(b => b.classList.toggle("active", b === btn));
-      renderNextTrains();
-      renderVerticalRoute(loadedTrains);
-    });
-  });
-
-  // 文字サイズ変更機能
-  const fontScales = [
-    { scale: 1.0, label: '文字サイズ: 標準' },
-    { scale: 1.2, label: '文字サイズ: 大' },
-    { scale: 0.85, label: '文字サイズ: 小' }
-  ];
-  let currentScaleIndex = 0;
-  const mojiBtn = document.getElementById("Mojibtn");
-  if (mojiBtn) {
-    mojiBtn.addEventListener("click", () => {
-      currentScaleIndex = (currentScaleIndex + 1) % fontScales.length;
-      document.documentElement.style.setProperty('--font-scale', fontScales[currentScaleIndex].scale);
-      mojiBtn.textContent = fontScales[currentScaleIndex].label;
-    });
-  }
+const scales=[{s:1,l:"文字：標準"},{s:1.18,l:"文字：大"},{s:.9,l:"文字：小"}];
+let scaleIndex=0;
+document.getElementById("fontBtn").addEventListener("click",()=>{
+  scaleIndex=(scaleIndex+1)%scales.length;
+  document.documentElement.style.setProperty("--font-scale",scales[scaleIndex].s);
+  document.getElementById("fontBtn").textContent=scales[scaleIndex].l;
 });
 
-async function init() {
-  try {
-    if (typeof loadTrainData === "function") {
-      loadedTrains = await loadTrainData();
-    }
-  } catch (e) {
-    console.warn("データロード警告:", e);
-  }
-
-  renderNextTrains();
-  renderVerticalRoute(loadedTrains);
-  renderConnectionView();
-  initMap();
-  renderMap(loadedTrains);
-  initTimetable();
-
-  if (splashScreen) {
-    setTimeout(() => {
-      splashScreen.classList.add("hide");
-      document.body.classList.remove("splash-active");
-      setTimeout(() => splashScreen.remove(), 350);
-    }, 1200);
-  }
+async function init(){
+  loadedTrains=await loadTrainData();
+  renderStationGrid();
+  renderDualRoute();
+  renderTimetable();
+  setupSimpleMapInteraction();
+  setTimeout(()=>{
+    const s=document.getElementById("splashScreen");
+    s.classList.add("hide");
+    document.body.classList.remove("splash-active");
+    setTimeout(()=>s.remove(),350);
+  },1400);
 }
-
-init();
+init().catch(console.error);

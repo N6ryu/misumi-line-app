@@ -1,259 +1,59 @@
-// 三角線アプリ モックデータ v16
-// 熊本〜三角 13駅対象 / JR九州サンプル2列車を反映
-
-const stations = [
-  { id: "S01", name: "熊本",     lat: 32.7898759, lng: 130.6886784 },
-  { id: "S02", name: "西熊本",   lat: 32.7622048, lng: 130.6830044 },
-  { id: "S03", name: "川尻",     lat: 32.7432967, lng: 130.6797000 },
-  { id: "S04", name: "富合",     lat: 32.7137924, lng: 130.6728748 },
-  { id: "S05", name: "宇土",     lat: 32.6939373, lng: 130.6689895 },
-  { id: "S06", name: "緑川",     lat: 32.6940800, lng: 130.6312200 },
-  { id: "S07", name: "住吉",     lat: 32.7020569, lng: 130.5978974 },
-  { id: "S08", name: "肥後長浜", lat: 32.6906325, lng: 130.5602429 },
-  { id: "S09", name: "網田",     lat: 32.6676218, lng: 130.5468003 },
-  { id: "S10", name: "赤瀬",     lat: 32.6533333, lng: 130.5100028 },
-  { id: "S11", name: "石打ダム", lat: 32.6425269, lng: 130.5068254 },
-  { id: "S12", name: "波多浦",   lat: 32.6153747, lng: 130.4879955 },
-  { id: "S13", name: "三角",     lat: 32.6077500, lng: 130.4696800 }
+const stations=[
+{name:"熊本",lat:32.7898759,lng:130.6886784},
+{name:"西熊本",lat:32.7622048,lng:130.6830044},
+{name:"川尻",lat:32.7432967,lng:130.6797},
+{name:"富合",lat:32.7137924,lng:130.6728748},
+{name:"宇土",lat:32.6939373,lng:130.6689895},
+{name:"緑川",lat:32.69408,lng:130.63122},
+{name:"住吉",lat:32.7020569,lng:130.5978974},
+{name:"肥後長浜",lat:32.6906325,lng:130.5602429},
+{name:"網田",lat:32.6676218,lng:130.5468003},
+{name:"赤瀬",lat:32.6533333,lng:130.5100028},
+{name:"石打ダム",lat:32.6425269,lng:130.5068254},
+{name:"波多浦",lat:32.6153747,lng:130.4879955},
+{name:"三角",lat:32.60775,lng:130.46968}
 ];
 
-let trains = [
-  {
-    id: "8031D",
-    trainNo: "8031D",
-    serviceName: "A列車で行こう 1号",
-    serviceKind: "ds",
-    sourceCurrentStation: "富合",
-    currentStation: "富合",
-    nextStation: "宇土",
-    nextStop: "宇土",
-    rawDirection: "下り",
-    direction: "三角方面",
-    lat: 32.71283416,
-    lng: 130.6727855,
-    rawSpeed: 75,
-    speedKmh: 75,
-    beaconAt: "2026/01/01 10:28",
-    acquiredAt: "2026/01/01 10:28",
-    formation: "キハ185-4",
-    cabCarNo: "キハ185-4",
-    scheduledNextArrival: "10:31",
-    delayMinutes: 0
-  },
-  {
-    id: "527D",
-    trainNo: "527D",
-    serviceName: "普通",
-    serviceKind: "local",
-    sourceCurrentStation: "三角",
-    currentStation: "三角",
-    nextStation: "三角",
-    nextStop: "三角",
-    rawDirection: "下り",
-    direction: "三角方面",
-    lat: 32.60767861,
-    lng: 130.4699545,
-    rawSpeed: -3.6,
-    speedKmh: 0,
-    beaconAt: "2026/01/01 10:02",
-    acquiredAt: "2026/01/01 10:28",
-    formation: "キハ147-106",
-    cabCarNo: "キハ147-106",
-    terminalArrived: true,
-    terminalArrivalLabel: "終点到着",
-    delayMinutes: 0
-  }
+const trains=[
+{
+ id:"8031D",nickname:"A列車で行こう 1号",
+ currentStation:"富合",nextStation:"宇土",nextStop:"宇土",
+ rawDirection:"下り",derivedDirection:"下り",displayDirection:"三角方面",operationalState:"走行中",
+ latitude:32.71283416,longitude:130.6727855,speed:75,
+ beaconAt:"10:28",acquiredAt:"10:28",formation:"キハ185-4",cabCarNo:"キハ185-4",
+ terminal:"三角",
+ timetable:[
+  {station:"宇土",arrival:"10:31",departure:"10:31"},
+  {station:"網田",arrival:"10:52",departure:"11:17"},
+  {station:"三角",arrival:"11:30",departure:null}
+ ],
+ timetableNote:"A列車で行こう1号の時刻表を参照"
+},
+{
+ id:"527D",nickname:"普通",
+ currentStation:"三角",nextStation:"三角",nextStop:"三角",
+ rawDirection:"下り",derivedDirection:"上り",displayDirection:"熊本方面",operationalState:"出発待ち",
+ latitude:32.60767861,longitude:130.4699545,speed:-3.6,
+ beaconAt:"10:02",acquiredAt:"10:28",formation:"キハ147-106",cabCarNo:"キハ147-106",
+ terminal:"熊本",inferredDeparture:"11:00",
+ timetable:[{station:"三角",arrival:null,departure:"11:00"}],
+ timetableNote:"三角駅時刻表の11:00 熊本行を参照。ビーコン発信から5分以上経過し三角駅停車中のため、表示上は上り・出発待ちと判定"
+}
 ];
 
-function haversineMeters(a, b) {
-  const R = 6371000;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+function stationIndex(name){return stations.findIndex(s=>s.name===name)}
+
+function routePositionIndex(t){
+ const a=stationIndex(t.currentStation),b=stationIndex(t.nextStation);
+ if(a<0)return 0;
+ if(b<0||a===b)return a;
+ const A=stations[a],B=stations[b],c=Math.cos(((A.lat+B.lat)/2)*Math.PI/180);
+ const ax=A.lng*c,ay=A.lat,bx=B.lng*c,by=B.lat,px=t.longitude*c,py=t.latitude;
+ const dx=bx-ax,dy=by-ay,d=dx*dx+dy*dy;
+ const q=d?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/d)):0;
+ return a+(b-a)*q;
 }
 
-function stationIndex(name) {
-  return stations.findIndex(s => s.name === name);
+async function loadTrainData(){
+ return trains.map(t=>({...t,positionIndex:routePositionIndex(t)}));
 }
-
-function routePositionIndex(train) {
-  const currentIndex = stationIndex(train.sourceCurrentStation || train.currentStation);
-  const nextIndex = stationIndex(train.nextStation);
-  if (currentIndex < 0) return 0;
-  if (nextIndex < 0 || currentIndex === nextIndex) return currentIndex;
-
-  const a = stations[currentIndex];
-  const b = stations[nextIndex];
-  const cosLat = Math.cos(((a.lat + b.lat) / 2) * Math.PI / 180);
-  const ax = a.lng * cosLat, ay = a.lat;
-  const bx = b.lng * cosLat, by = b.lat;
-  const px = train.lng * cosLat, py = train.lat;
-  const abx = bx - ax, aby = by - ay;
-  const apx = px - ax, apy = py - ay;
-  const denom = abx * abx + aby * aby;
-  const t = denom > 0 ? Math.max(0, Math.min(1, (apx * abx + apy * aby) / denom)) : 0;
-  return currentIndex + (nextIndex - currentIndex) * t;
-}
-
-function isTerminalStopped(train) {
-  if (!(train.terminalArrived || (train.currentStation === train.nextStation && train.currentStation === train.nextStop))) return false;
-  const station = stations.find(s => s.name === train.currentStation);
-  if (!station) return false;
-  return haversineMeters({lat: train.lat, lng: train.lng}, station) < 250;
-}
-
-function locationText(train) {
-  if (isTerminalStopped(train)) return `${train.currentStation}駅`;
-  if (train.currentStation !== train.nextStation) return `${train.currentStation}〜${train.nextStation}間`;
-  return `${train.currentStation}駅付近`;
-}
-
-function statusText(train) {
-  if (isTerminalStopped(train)) return "終点到着";
-  if (typeof train.delayMinutes !== 'number' || Number.isNaN(train.delayMinutes)) return "確認中";
-  return train.delayMinutes > 0 ? `${train.delayMinutes}分遅れ` : "定刻";
-}
-
-function nextTimeLabel(train) {
-  if (isTerminalStopped(train)) return "";
-  return "次駅到着予定";
-}
-
-function addDelay(baseTime, delayMinutes = 0) {
-  const [hh, mm] = String(baseTime).split(':').map(Number);
-  const d = new Date(2000, 0, 1, hh, mm + delayMinutes);
-  return d.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'});
-}
-
-function nextTimeValue(train) {
-  if (isTerminalStopped(train)) return "";
-  if (train.scheduledNextArrival) return addDelay(train.scheduledNextArrival, train.delayMinutes || 0);
-  return "確認中";
-}
-
-trains = trains.map(t => ({ ...t, positionIndex: routePositionIndex(t) }));
-
-async function loadTrainData() {
-  return trains;
-}
-
-const timetableData = {
-  "熊本": {
-    toMisumi: [
-      ["06:17","普通"],["07:19","普通"],["08:04","普通"],["08:58","普通"],
-      ["09:55","普通"],["10:21","A列車1号"],["11:30","普通"],["12:39","普通"],
-      ["13:06","A列車3号"],["13:38","普通"],["15:05","普通"],["16:06","普通"],
-      ["17:06","普通"],["18:26","普通"],["19:25","普通"],["20:29","普通"],
-      ["21:31","普通"],["22:56","普通"]
-    ],
-    toKumamoto: []
-  },
-  "西熊本": {
-    toMisumi: [
-      ["06:22","普通"],["07:24","普通"],["08:09","普通"],["09:03","普通"],
-      ["10:00","普通"],["11:35","普通"],["12:44","普通"],["13:43","普通"],
-      ["15:10","普通"],["16:11","普通"],["17:11","普通"],["18:31","普通"],
-      ["19:30","普通"],["20:34","普通"],["21:35","普通"],["23:01","普通"]
-    ],
-    toKumamoto: [
-      ["06:39","普通"],["07:28","普通"],["08:10","普通"],["09:10","普通"],
-      ["09:52","普通"],["11:05","普通"],["11:47","普通"],["13:28","普通"],
-      ["14:28","普通"],["15:30","普通"],["16:56","普通"],["17:59","普通"],
-      ["19:13","普通"],["20:15","普通"],["21:20","普通"],["22:20","普通"]
-    ]
-  },
-  "川尻": {
-    toMisumi: [
-      ["06:26","普通"],["07:29","普通"],["08:12","普通"],["09:07","普通"],
-      ["10:04","普通"],["11:39","普通"],["12:48","普通"],["13:46","普通"],
-      ["15:14","普通"],["16:14","普通"],["17:14","普通"],["18:34","普通"],
-      ["19:33","普通"],["20:37","普通"],["21:39","普通"],["23:05","普通"]
-    ],
-    toKumamoto: [
-      ["06:36","普通"],["07:24","普通"],["08:06","普通"],["09:07","普通"],
-      ["09:49","普通"],["11:02","普通"],["11:44","普通"],["13:25","普通"],
-      ["14:25","普通"],["15:27","普通"],["16:53","普通"],["17:55","普通"],
-      ["19:10","普通"],["20:11","普通"],["21:17","普通"],["22:17","普通"]
-    ]
-  },
-  "富合": {
-    toMisumi: [
-      ["06:30","普通"],["07:33","普通"],["08:17","普通"],["09:11","普通"],
-      ["10:08","普通"],["11:43","普通"],["12:52","普通"],["13:50","普通"],
-      ["15:18","普通"],["16:18","普通"],["17:18","普通"],["18:38","普通"],
-      ["19:37","普通"],["20:41","普通"],["21:43","普通"],["23:09","普通"]
-    ],
-    toKumamoto: [
-      ["06:31","普通"],["07:20","普通"],["08:01","普通"],["09:03","普通"],
-      ["09:44","普通"],["10:58","普通"],["11:40","普通"],["13:20","普通"],
-      ["14:20","普通"],["15:23","普通"],["16:48","普通"],["17:51","普通"],
-      ["19:05","普通"],["20:07","普通"],["21:12","普通"],["22:12","普通"]
-    ]
-  },
-  "宇土": {
-    toMisumi: [
-      ["06:34","普通"],["07:38","普通"],["08:20","普通"],["09:15","普通"],
-      ["10:12","普通"],["10:31","A列車1号"],["11:47","普通"],["12:56","普通"],
-      ["13:17","A列車3号"],["13:54","普通"],["15:22","普通"],["16:22","普通"],
-      ["17:23","普通"],["18:42","普通"],["19:41","普通"],["20:45","普通"],
-      ["21:47","普通"],["23:13","普通"]
-    ],
-    toKumamoto: [
-      ["06:27","普通"],["07:15","普通"],["07:57","普通"],["08:59","普通"],
-      ["09:40","普通"],["10:54","普通"],["11:35","普通"],["12:26","A列車2号"],
-      ["13:16","普通"],["14:16","普通"],["15:19","普通"],["16:44","普通"],
-      ["17:03","A列車4号"],["17:47","普通"],["19:01","普通"],["20:03","普通"],
-      ["21:08","普通"],["22:08","普通"]
-    ]
-  },
-  "緑川": {
-    toMisumi: [["06:39","普通"],["07:43","普通"],["08:25","普通"],["09:21","普通"],["10:17","普通"],["11:53","普通"],["13:02","普通"],["13:59","普通"],["15:27","普通"],["16:28","普通"],["17:28","普通"],["18:47","普通"],["19:46","普通"],["20:50","普通"],["21:52","普通"],["23:18","普通"]],
-    toKumamoto: [["06:22","普通"],["07:10","普通"],["07:52","普通"],["08:54","普通"],["09:35","普通"],["10:48","普通"],["11:30","普通"],["13:11","普通"],["14:11","普通"],["15:14","普通"],["16:39","普通"],["17:41","普通"],["18:56","普通"],["19:58","普通"],["21:03","普通"],["22:03","普通"]]
-  },
-  "住吉": {
-    toMisumi: [["06:44","普通"],["07:47","普通"],["08:30","普通"],["09:30","普通"],["10:22","普通"],["11:57","普通"],["13:07","普通"],["14:06","普通"],["15:31","普通"],["16:34","普通"],["17:37","普通"],["18:52","普通"],["19:53","普通"],["20:58","普通"],["21:58","普通"],["23:22","普通"]],
-    toKumamoto: [["06:17","普通"],["07:05","普通"],["07:47","普通"],["08:49","普通"],["09:30","普通"],["10:43","普通"],["11:26","普通"],["13:06","普通"],["14:06","普通"],["15:09","普通"],["16:35","普通"],["17:37","普通"],["18:52","普通"],["19:53","普通"],["20:58","普通"],["21:59","普通"]]
-  },
-  "肥後長浜": {
-    toMisumi: [["06:50","普通"],["07:53","普通"],["08:35","普通"],["09:35","普通"],["10:27","普通"],["12:03","普通"],["13:12","普通"],["14:12","普通"],["15:37","普通"],["16:40","普通"],["17:42","普通"],["18:57","普通"],["19:58","普通"],["21:03","普通"],["22:04","普通"],["23:27","普通"]],
-    toKumamoto: [["06:12","普通"],["06:59","普通"],["07:39","普通"],["08:44","普通"],["09:24","普通"],["10:37","普通"],["11:20","普通"],["12:59","普通"],["14:01","普通"],["15:03","普通"],["16:29","普通"],["17:31","普通"],["18:43","普通"],["19:48","普通"],["20:52","普通"],["21:53","普通"]]
-  },
-  "網田": {
-    toMisumi: [["06:55","普通"],["07:57","普通"],["08:40","普通"],["09:40","普通"],["10:32","普通"],["11:17","A列車1号"],["12:10","普通"],["13:16","普通"],["13:57","A列車3号"],["14:17","普通"],["15:41","普通"],["16:47","普通"],["17:46","普通"],["19:01","普通"],["20:03","普通"],["21:08","普通"],["22:08","普通"],["23:32","普通"]],
-    toKumamoto: [["06:08","普通"],["06:55","普通"],["07:35","普通"],["08:39","普通"],["09:20","普通"],["10:33","普通"],["11:16","普通"],["12:54","普通"],["13:56","普通"],["14:59","普通"],["16:25","普通"],["17:27","普通"],["18:39","普通"],["19:44","普通"],["20:48","普通"],["21:49","普通"]]
-  },
-  "赤瀬": {
-    toMisumi: [["07:01","普通"],["08:03","普通"],["08:45","普通"],["09:45","普通"],["10:38","普通"],["12:15","普通"],["13:22","普通"],["14:23","普通"],["15:47","普通"],["16:52","普通"],["17:52","普通"],["19:07","普通"],["20:09","普通"],["21:13","普通"],["22:14","普通"],["23:37","普通"]],
-    toKumamoto: [["06:03","普通"],["06:47","普通"],["07:30","普通"],["08:32","普通"],["09:15","普通"],["10:25","普通"],["11:11","普通"],["12:49","普通"],["13:51","普通"],["14:54","普通"],["16:20","普通"],["17:22","普通"],["18:34","普通"],["19:39","普通"],["20:43","普通"],["21:44","普通"]]
-  },
-  "石打ダム": {
-    toMisumi: [["07:04","普通"],["08:06","普通"],["08:48","普通"],["09:48","普通"],["10:40","普通"],["12:18","普通"],["13:25","普通"],["14:25","普通"],["15:49","普通"],["16:55","普通"],["17:55","普通"],["19:10","普通"],["20:11","普通"],["21:16","普通"],["22:16","普通"],["23:40","普通"]],
-    toKumamoto: [["06:00","普通"],["06:44","普通"],["07:27","普通"],["08:29","普通"],["09:12","普通"],["10:22","普通"],["11:08","普通"],["12:46","普通"],["13:48","普通"],["14:51","普通"],["16:17","普通"],["17:19","普通"],["18:31","普通"],["19:36","普通"],["20:40","普通"],["21:41","普通"]]
-  },
-  "波多浦": {
-    toMisumi: [["07:08","普通"],["08:10","普通"],["08:53","普通"],["09:53","普通"],["10:45","普通"],["12:23","普通"],["13:29","普通"],["14:30","普通"],["15:54","普通"],["17:00","普通"],["17:59","普通"],["19:14","普通"],["20:16","普通"],["21:21","普通"],["22:21","普通"],["23:45","普通"]],
-    toKumamoto: [["05:55","普通"],["06:39","普通"],["07:22","普通"],["08:24","普通"],["09:07","普通"],["10:17","普通"],["11:03","普通"],["12:41","普通"],["13:43","普通"],["14:46","普通"],["16:12","普通"],["17:14","普通"],["18:26","普通"],["19:31","普通"],["20:35","普通"],["21:36","普通"]]
-  },
-  "三角": {
-    toMisumi: [],
-    toKumamoto: [["05:52","普通"],["06:36","普通"],["07:19","普通"],["08:21","普通"],["09:04","普通"],["10:14","普通"],["11:00","普通"],["11:58","A列車2号"],["12:38","普通"],["13:40","普通"],["14:42","普通"],["16:09","普通"],["16:35","A列車4号"],["17:11","普通"],["18:23","普通"],["19:28","普通"],["20:32","普通"],["21:33","普通"]]
-  }
-};
-
-// v24: UI検証用の接続サンプル。正式運用ではJR九州提供・許諾データに置き換える。
-const connectionSamples = {
-  "熊本": [
-    { time: "11:03", line: "鹿児島本線", destination: "玉名方面", transferMinutes: 7, platform: "のりば確認" },
-    { time: "11:08", line: "豊肥本線", destination: "肥後大津方面", transferMinutes: 12, platform: "のりば確認" },
-    { time: "11:12", line: "鹿児島本線", destination: "八代方面", transferMinutes: 16, platform: "のりば確認" },
-    { time: "11:18", line: "九州新幹線", destination: "博多方面", transferMinutes: 22, platform: "新幹線口" }
-  ],
-  "宇土": [
-    { time: "10:39", line: "鹿児島本線", destination: "熊本方面", transferMinutes: 8, platform: "のりば確認" },
-    { time: "10:47", line: "鹿児島本線", destination: "八代方面", transferMinutes: 16, platform: "のりば確認" }
-  ]
-};
