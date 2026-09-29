@@ -66,12 +66,27 @@ function renderStationGrid(){
 
 function selectStation(name){
   selectedStation=name;
-  bottomNav.hidden=false;
-  stationFab.hidden=false;
   setTimetableStation(name);
   renderDualRoute();
-  setView(0);
-  setTimeout(()=>scrollToSelectedStation(true),180);
+
+  const selectedBtn=document.querySelector(`#stationGrid [data-station="${name}"]`);
+  if(selectedBtn) selectedBtn.classList.add("station-picked");
+
+  gate.classList.add("gate-leaving");
+  setTimeout(()=>{
+    bottomNav.hidden=false;
+    stationFab.hidden=false;
+    setView(0);
+    const positionView=document.getElementById("viewPosition");
+    positionView.classList.add("view-arriving");
+    requestAnimationFrame(()=>positionView.classList.add("view-arriving-active"));
+    setTimeout(()=>{
+      positionView.classList.remove("view-arriving","view-arriving-active");
+      gate.classList.remove("gate-leaving");
+      if(selectedBtn) selectedBtn.classList.remove("station-picked");
+      scrollToSelectedStation(true);
+    },520);
+  },380);
 }
 
 function scrollToSelectedStation(smooth=true){
@@ -88,7 +103,7 @@ const routeSide=t=>(t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
 
 function trainChip(t){
   const side=routeSide(t);
-  const icon=side==="up"?"./assets/train-up.gif?v=32":"./assets/train-down.gif?v=32";
+  const icon=side==="up"?"./assets/train-up.gif?v=38":"./assets/train-down.gif?v=38";
   const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
   return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
     <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
@@ -256,25 +271,21 @@ function renderRouteAndMarkers(){
   svg.setAttribute("width",map.clientWidth);
   svg.setAttribute("height",map.clientHeight);
 
-  const pts=stations.map(s=>{
-    const p=mapScreenPoint(s.lat,s.lng);
-    return `${p.x},${p.y}`;
-  }).join(" ");
-
   const stationSvg=stations.map(s=>{
     const p=mapScreenPoint(s.lat,s.lng);
-    return `<g>
-      <circle cx="${p.x}" cy="${p.y}" r="4.5" class="map-station-dot"></circle>
-      <text x="${p.x+6}" y="${p.y-5}" class="map-station-label">${s.name}</text>
+    return `<g class="map-station-group ${s.name===selectedStation?"selected":""}">
+      <circle cx="${p.x}" cy="${p.y}" r="9" class="map-station-icon-ring"></circle>
+      <circle cx="${p.x}" cy="${p.y}" r="4.5" class="map-station-icon-core"></circle>
+      <text x="${p.x+11}" y="${p.y-7}" class="map-station-label">${s.name}</text>
     </g>`;
   }).join("");
 
-  svg.innerHTML=`<polyline points="${pts}" class="map-route-line"></polyline>${stationSvg}`;
+  svg.innerHTML=stationSvg;
 
   markers.innerHTML=loadedTrains.map(t=>{
     const p=mapScreenPoint(t.latitude,t.longitude);
     const side=routeSide(t);
-    const icon=side==="up"?"./assets/train-up.gif?v=35":"./assets/train-down.gif?v=35";
+    const icon=side==="up"?"./assets/train-up.gif?v=38":"./assets/train-down.gif?v=38";
     const label=t.operationalState==="出発待ち" ? `出発待ち ${t.inferredDeparture||""}`.trim() : t.id;
     return `<button class="simple-train-marker" data-train="${t.id}"
       style="left:${p.x}px;top:${p.y}px">
@@ -414,6 +425,44 @@ document.getElementById("ttStationButton").addEventListener("click",openStationM
 document.getElementById("stationModalClose").addEventListener("click",closeStationModal);
 stationModalBackdrop.addEventListener("click",closeStationModal);
 
+// 横スワイプで 列車位置 ⇄ 地図 ⇄ 時刻表 を移動
+let swipeStartX=0,swipeStartY=0,swipeTracking=false;
+function shouldIgnoreSwipe(target){
+  return !!target.closest(".simple-map,.bottom-sheet,.station-modal,button,a,input,select,textarea");
+}
+function setupContentSwipe(){
+  const main=document.querySelector(".app-main");
+  if(!main)return;
+  main.addEventListener("touchstart",e=>{
+    if(gate && !gate.hidden)return;
+    if(e.touches.length!==1 || shouldIgnoreSwipe(e.target)){swipeTracking=false;return;}
+    swipeTracking=true;
+    swipeStartX=e.touches[0].clientX;
+    swipeStartY=e.touches[0].clientY;
+  },{passive:true});
+  main.addEventListener("touchend",e=>{
+    if(!swipeTracking || !e.changedTouches.length)return;
+    swipeTracking=false;
+    const dx=e.changedTouches[0].clientX-swipeStartX;
+    const dy=e.changedTouches[0].clientY-swipeStartY;
+    if(Math.abs(dx)<70 || Math.abs(dx)<Math.abs(dy)*1.25)return;
+    if(dx<0 && currentView<2) animateSwipeTo(currentView+1,"left");
+    if(dx>0 && currentView>0) animateSwipeTo(currentView-1,"right");
+  },{passive:true});
+}
+function animateSwipeTo(next,direction){
+  const current=views[currentView];
+  current.classList.add(direction==="left"?"swipe-exit-left":"swipe-exit-right");
+  setTimeout(()=>{
+    current.classList.remove("swipe-exit-left","swipe-exit-right");
+    setView(next);
+    const incoming=views[next];
+    incoming.classList.add(direction==="left"?"swipe-enter-right":"swipe-enter-left");
+    requestAnimationFrame(()=>incoming.classList.add("swipe-enter-active"));
+    setTimeout(()=>incoming.classList.remove("swipe-enter-right","swipe-enter-left","swipe-enter-active"),320);
+  },150);
+}
+
 stationFab.addEventListener("click",showGate);
 
 const scales=[{s:1,l:"文字：標準"},{s:1.18,l:"文字：大"},{s:.9,l:"文字：小"}];
@@ -430,6 +479,7 @@ async function init(){
   renderDualRoute();
   renderTimetable();
   setupSimpleMapInteraction();
+  setupContentSwipe();
   setTimeout(()=>{
     const s=document.getElementById("splashScreen");
     s.classList.add("hide");
