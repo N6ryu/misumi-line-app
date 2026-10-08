@@ -465,7 +465,7 @@ function animateSwipeTo(next,direction){
 
 stationFab.addEventListener("click",showGate);
 
-const scales=[{s:1,l:"文字：標準"},{s:1.18,l:"文字：大"},{s:.9,l:"文字：小"}];
+const scales=[{s:1,l:"文字：標準"},{s:1.3,l:"文字：大"},{s:.9,l:"文字：小"}];
 let scaleIndex=0;
 document.getElementById("fontBtn").addEventListener("click",()=>{
   scaleIndex=(scaleIndex+1)%scales.length;
