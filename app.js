@@ -1,4 +1,5 @@
 let selectedStation=null,loadedTrains=[],currentView=0;
+let positionDisplayMode = "list"; // "list" または "map"
 let simpleMapState={
   zoom:10,
   centerLat:32.700,
@@ -20,18 +21,51 @@ const stationModal=document.getElementById("stationModal");
 const stationModalBackdrop=document.getElementById("stationModalBackdrop");
 const fixedBg=document.getElementById("fixedBg");
 
-// 表示中の画面に合わせて固定背景を連動更新する処理
+const toggleListBtn = document.getElementById("toggleListBtn");
+const toggleMapBtn = document.getElementById("toggleMapBtn");
+const dualRoute = document.getElementById("dualRoute");
+const routeColumnsHead = document.getElementById("routeColumnsHead");
+const mapContainer = document.getElementById("mapContainer");
+
+// 表示切替（リスト ↔ 地図）
+function setPositionDisplayMode(mode) {
+  positionDisplayMode = mode;
+  if (mode === "list") {
+    toggleListBtn.classList.add("active");
+    toggleMapBtn.classList.remove("active");
+    dualRoute.hidden = false;
+    routeColumnsHead.style.display = "grid";
+    mapContainer.hidden = true;
+    if (selectedStation) setTimeout(() => scrollToSelectedStation(false), 80);
+  } else {
+    toggleMapBtn.classList.add("active");
+    toggleListBtn.classList.remove("active");
+    dualRoute.hidden = true;
+    routeColumnsHead.style.display = "none";
+    mapContainer.hidden = false;
+    setTimeout(() => {
+      resetSimpleMapToRoute();
+      renderSimpleMap();
+    }, 80);
+  }
+}
+
+if (toggleListBtn && toggleMapBtn) {
+  toggleListBtn.addEventListener("click", () => setPositionDisplayMode("list"));
+  toggleMapBtn.addEventListener("click", () => setPositionDisplayMode("map"));
+}
+
 function updateDynamicBg(viewType) {
   if (!fixedBg) return;
-  fixedBg.className = "gate-fixed-bg"; // 一度リセット
+  fixedBg.className = "gate-fixed-bg";
   if (viewType === "gate") {
     fixedBg.classList.add("bg-gate");
   } else if (viewType === 0) {
     fixedBg.classList.add("bg-position");
   } else if (viewType === 1) {
-    fixedBg.classList.add("bg-map");
-  } else if (viewType === 2) {
     fixedBg.classList.add("bg-timetable");
+  } else if (viewType === 2) {
+    fixedBg.classList.add("bg-event");
   }
 }
 
@@ -41,17 +75,15 @@ function setView(i){
   views.forEach((v,n)=>v.classList.toggle("active",n===currentView));
   navButtons.forEach((b,n)=>b.classList.toggle("active",n===currentView));
   
-  // 背景切り替えを実行
   updateDynamicBg(currentView);
 
-  if(currentView===0&&selectedStation)setTimeout(()=>scrollToSelectedStation(false),80);
-  if(currentView===1){
-    setTimeout(()=>{
-      resetSimpleMapToRoute();
-      renderSimpleMap();
-    },80);
+  if(currentView===0){
+    if(positionDisplayMode==="list" && selectedStation) setTimeout(()=>scrollToSelectedStation(false),80);
+    if(positionDisplayMode==="map"){
+      setTimeout(()=>{ resetSimpleMapToRoute(); renderSimpleMap(); },80);
+    }
   }
-  if(currentView===2){
+  if(currentView===1){
     if(selectedStation) setTimetableStation(selectedStation);
     renderTimetable();
   }
@@ -63,7 +95,7 @@ function showGate(){
   gate.hidden=false;
   bottomNav.hidden=true;
   stationFab.hidden=true;
-  updateDynamicBg("gate"); // ゲート表示時の背景に更新
+  updateDynamicBg("gate");
 }
 
 function stationButtonHTML(s){
@@ -105,7 +137,7 @@ function selectStation(name){
       positionView.classList.remove("view-arriving","view-arriving-active");
       gate.classList.remove("gate-leaving");
       if(selectedBtn) selectedBtn.classList.remove("station-picked");
-      scrollToSelectedStation(true);
+      if(positionDisplayMode==="list") scrollToSelectedStation(true);
     },520);
   },380);
 }
@@ -124,7 +156,7 @@ const routeSide=t=>(t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
 
 function trainChip(t){
   const side=routeSide(t);
-  const icon=side==="up"?"./assets/train-up.gif?v=38":"./assets/train-down.gif?v=38";
+  const icon=side==="up"?"./assets/train-up.gif?v=39":"./assets/train-down.gif?v=39";
   const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
   return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
     <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
@@ -190,48 +222,27 @@ function openTrainDetail(id){
     <p class="source-note">${t.timetableNote}</p>`);
 }
 
-// Simple OSM map
+// Simple Map
 const TILE_SIZE=256;
-
-function lonToWorldX(lon,zoom){
-  return ((lon+180)/360)*TILE_SIZE*Math.pow(2,zoom);
-}
-function latToWorldY(lat,zoom){
-  const sin=Math.sin(lat*Math.PI/180);
-  return (0.5-Math.log((1+sin)/(1-sin))/(4*Math.PI))*TILE_SIZE*Math.pow(2,zoom);
-}
-function worldXToLon(x,zoom){
-  return x/(TILE_SIZE*Math.pow(2,zoom))*360-180;
-}
-function worldYToLat(y,zoom){
-  const n=Math.PI-2*Math.PI*y/(TILE_SIZE*Math.pow(2,zoom));
-  return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));
-}
+function lonToWorldX(lon,zoom){ return ((lon+180)/360)*TILE_SIZE*Math.pow(2,zoom); }
+function latToWorldY(lat,zoom){ const sin=Math.sin(lat*Math.PI/180); return (0.5-Math.log((1+sin)/(1-sin))/(4*Math.PI))*TILE_SIZE*Math.pow(2,zoom); }
+function worldXToLon(x,zoom){ return x/(TILE_SIZE*Math.pow(2,zoom))*360-180; }
+function worldYToLat(y,zoom){ const n=Math.PI-2*Math.PI*y/(TILE_SIZE*Math.pow(2,zoom)); return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))); }
 
 function routeBounds(){
-  const lats=stations.map(s=>s.lat);
-  const lngs=stations.map(s=>s.lng);
-  return {
-    minLat:Math.min(...lats), maxLat:Math.max(...lats),
-    minLng:Math.min(...lngs), maxLng:Math.max(...lngs)
-  };
+  const lats=stations.map(s=>s.lat), lngs=stations.map(s=>s.lng);
+  return { minLat:Math.min(...lats), maxLat:Math.max(...lats), minLng:Math.min(...lngs), maxLng:Math.max(...lngs) };
 }
 
 function resetSimpleMapToRoute(){
   const el=document.getElementById("simpleMap");
   if(!el)return;
-  const b=routeBounds();
-  const width=Math.max(280,el.clientWidth);
-  const height=Math.max(360,el.clientHeight);
-  const pad=34;
-
+  const b=routeBounds(), width=Math.max(280,el.clientWidth), height=Math.max(360,el.clientHeight), pad=34;
   let chosen=9;
   for(let z=13;z>=7;z--){
     const x1=lonToWorldX(b.minLng,z),x2=lonToWorldX(b.maxLng,z);
     const y1=latToWorldY(b.maxLat,z),y2=latToWorldY(b.minLat,z);
-    if((x2-x1)<=width-pad*2 && (y2-y1)<=height-pad*2){
-      chosen=z;break;
-    }
+    if((x2-x1)<=width-pad*2 && (y2-y1)<=height-pad*2){ chosen=z;break; }
   }
   simpleMapState.zoom=chosen;
   simpleMapState.centerLat=(b.minLat+b.maxLat)/2;
@@ -241,53 +252,34 @@ function resetSimpleMapToRoute(){
 function mapScreenPoint(lat,lng){
   const el=document.getElementById("simpleMap");
   const z=simpleMapState.zoom;
-  const cx=lonToWorldX(simpleMapState.centerLng,z);
-  const cy=latToWorldY(simpleMapState.centerLat,z);
-  return {
-    x:lonToWorldX(lng,z)-cx+el.clientWidth/2,
-    y:latToWorldY(lat,z)-cy+el.clientHeight/2
-  };
+  const cx=lonToWorldX(simpleMapState.centerLng,z), cy=latToWorldY(simpleMapState.centerLat,z);
+  return { x:lonToWorldX(lng,z)-cx+el.clientWidth/2, y:latToWorldY(lat,z)-cy+el.clientHeight/2 };
 }
 
 function renderTiles(){
-  const el=document.getElementById("simpleMap");
-  const layer=document.getElementById("mapTiles");
+  const el=document.getElementById("simpleMap"), layer=document.getElementById("mapTiles");
   if(!el||!layer)return;
-
   const z=simpleMapState.zoom;
-  const cx=lonToWorldX(simpleMapState.centerLng,z);
-  const cy=latToWorldY(simpleMapState.centerLat,z);
-  const left=cx-el.clientWidth/2;
-  const top=cy-el.clientHeight/2;
-  const right=cx+el.clientWidth/2;
-  const bottom=cy+el.clientHeight/2;
-
-  const minTX=Math.floor(left/TILE_SIZE)-1;
-  const maxTX=Math.floor(right/TILE_SIZE)+1;
-  const minTY=Math.floor(top/TILE_SIZE)-1;
-  const maxTY=Math.floor(bottom/TILE_SIZE)+1;
+  const cx=lonToWorldX(simpleMapState.centerLng,z), cy=latToWorldY(simpleMapState.centerLat,z);
+  const left=cx-el.clientWidth/2, top=cy-el.clientHeight/2, right=cx+el.clientWidth/2, bottom=cy+el.clientHeight/2;
+  const minTX=Math.floor(left/TILE_SIZE)-1, maxTX=Math.floor(right/TILE_SIZE)+1;
+  const minTY=Math.floor(top/TILE_SIZE)-1, maxTY=Math.floor(bottom/TILE_SIZE)+1;
   const maxTile=Math.pow(2,z);
-
   let html="";
   for(let tx=minTX;tx<=maxTX;tx++){
     for(let ty=minTY;ty<=maxTY;ty++){
       if(ty<0||ty>=maxTile)continue;
       const wrappedX=((tx%maxTile)+maxTile)%maxTile;
-      const x=tx*TILE_SIZE-left;
-      const y=ty*TILE_SIZE-top;
-      html+=`<img class="osm-tile" src="https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png"
-        style="left:${x}px;top:${y}px" alt="">`;
+      const x=tx*TILE_SIZE-left, y=ty*TILE_SIZE-top;
+      html+=`<img class="osm-tile" src="https://tile.openstreetmap.org/${z}/${wrappedX}/${ty}.png" style="left:${x}px;top:${y}px" alt="">`;
     }
   }
   layer.innerHTML=html;
 }
 
 function renderRouteAndMarkers(){
-  const svg=document.getElementById("mapRouteSvg");
-  const markers=document.getElementById("mapMarkers");
-  const map=document.getElementById("simpleMap");
+  const svg=document.getElementById("mapRouteSvg"), markers=document.getElementById("mapMarkers"), map=document.getElementById("simpleMap");
   if(!svg||!markers||!map)return;
-
   svg.setAttribute("viewBox",`0 0 ${map.clientWidth} ${map.clientHeight}`);
   svg.setAttribute("width",map.clientWidth);
   svg.setAttribute("height",map.clientHeight);
@@ -300,89 +292,62 @@ function renderRouteAndMarkers(){
       <text x="${p.x+11}" y="${p.y-7}" class="map-station-label">${s.name}</text>
     </g>`;
   }).join("");
-
   svg.innerHTML=stationSvg;
 
   markers.innerHTML=loadedTrains.map(t=>{
     const p=mapScreenPoint(t.latitude,t.longitude);
     const side=routeSide(t);
-    const icon=side==="up"?"./assets/train-up.gif?v=38":"./assets/train-down.gif?v=38";
+    const icon=side==="up"?"./assets/train-up.gif?v=39":"./assets/train-down.gif?v=39";
     const label=t.operationalState==="出発待ち" ? `出発待ち ${t.inferredDeparture||""}`.trim() : t.id;
-    return `<button class="simple-train-marker" data-train="${t.id}"
-      style="left:${p.x}px;top:${p.y}px">
+    return `<button class="simple-train-marker" data-train="${t.id}" style="left:${p.x}px;top:${p.y}px">
       <img src="${icon}" alt="${t.id}">
       <span>${label}</span>
     </button>`;
   }).join("");
 
-  markers.querySelectorAll("[data-train]").forEach(b=>
-    b.addEventListener("click",e=>{
-      e.stopPropagation();
-      openTrainDetail(b.dataset.train);
-    })
-  );
+  markers.querySelectorAll("[data-train]").forEach(b=>b.addEventListener("click",e=>{
+    e.stopPropagation();
+    openTrainDetail(b.dataset.train);
+  }));
 }
 
-function renderSimpleMap(){
-  renderTiles();
-  renderRouteAndMarkers();
-}
-
-function zoomSimpleMap(delta){
-  simpleMapState.zoom=Math.max(7,Math.min(15,simpleMapState.zoom+delta));
-  renderSimpleMap();
-}
+function renderSimpleMap(){ renderTiles(); renderRouteAndMarkers(); }
+function zoomSimpleMap(delta){ simpleMapState.zoom=Math.max(7,Math.min(15,simpleMapState.zoom+delta)); renderSimpleMap(); }
 
 function setupSimpleMapInteraction(){
   const map=document.getElementById("simpleMap");
   if(!map)return;
-
   map.addEventListener("pointerdown",e=>{
     simpleMapState.dragging=true;
-    simpleMapState.startX=e.clientX;
-    simpleMapState.startY=e.clientY;
+    simpleMapState.startX=e.clientX; simpleMapState.startY=e.clientY;
     simpleMapState.startCenterPx={
       x:lonToWorldX(simpleMapState.centerLng,simpleMapState.zoom),
       y:latToWorldY(simpleMapState.centerLat,simpleMapState.zoom)
     };
     map.setPointerCapture(e.pointerId);
   });
-
   map.addEventListener("pointermove",e=>{
     if(!simpleMapState.dragging)return;
-    const dx=e.clientX-simpleMapState.startX;
-    const dy=e.clientY-simpleMapState.startY;
-    const cx=simpleMapState.startCenterPx.x-dx;
-    const cy=simpleMapState.startCenterPx.y-dy;
+    const dx=e.clientX-simpleMapState.startX, dy=e.clientY-simpleMapState.startY;
+    const cx=simpleMapState.startCenterPx.x-dx, cy=simpleMapState.startCenterPx.y-dy;
     simpleMapState.centerLng=worldXToLon(cx,simpleMapState.zoom);
     simpleMapState.centerLat=worldYToLat(cy,simpleMapState.zoom);
     renderSimpleMap();
   });
-
   map.addEventListener("pointerup",()=>simpleMapState.dragging=false);
   map.addEventListener("pointercancel",()=>simpleMapState.dragging=false);
-
-  map.addEventListener("wheel",e=>{
-    e.preventDefault();
-    zoomSimpleMap(e.deltaY<0?1:-1);
-  },{passive:false});
+  map.addEventListener("wheel",e=>{ e.preventDefault(); zoomSimpleMap(e.deltaY<0?1:-1); },{passive:false});
 
   document.getElementById("mapZoomIn")?.addEventListener("click",()=>zoomSimpleMap(1));
   document.getElementById("mapZoomOut")?.addEventListener("click",()=>zoomSimpleMap(-1));
-  document.getElementById("mapReset")?.addEventListener("click",()=>{
-    resetSimpleMapToRoute();
-    renderSimpleMap();
-  });
+  document.getElementById("mapReset")?.addEventListener("click",()=>{ resetSimpleMapToRoute(); renderSimpleMap(); });
 
   window.addEventListener("resize",()=>{
-    if(currentView===1){
-      resetSimpleMapToRoute();
-      renderSimpleMap();
-    }
+    if(currentView===0 && positionDisplayMode==="map"){ resetSimpleMapToRoute(); renderSimpleMap(); }
   });
 }
 
-// timetable
+// 時刻表
 let timetableStation="三角";
 function setTimetableStation(name){
   timetableStation=name;
@@ -391,7 +356,6 @@ function setTimetableStation(name){
 }
 function renderTimetable(){
   const data=(typeof timetableData !== 'undefined' && timetableData[timetableStation]) ? timetableData[timetableStation] : {up:[],down:[]};
-
   const hours={};
   for(let h=5;h<=23;h++) hours[h]={up:[],down:[]};
 
@@ -404,9 +368,7 @@ function renderTimetable(){
       hours[h][side].push({minute:mm,label:item.label||""});
     }
   }
-
-  pushItems(data.up,"up");
-  pushItems(data.down,"down");
+  pushItems(data.up,"up"); pushItems(data.down,"down");
 
   const rows=Object.entries(hours)
     .filter(([,v])=>v.up.length||v.down.length)
@@ -418,9 +380,7 @@ function renderTimetable(){
               <strong>${x.minute}</strong>${x.label ? `<small>${x.label}</small>` : ""}
             </div>`).join("") : '<span class="no-train">—</span>'}
         </div>
-
         <div class="hour-center">${hour}</div>
-
         <div class="minute-side down">
           ${v.down.length ? v.down.map(x=>`
             <div class="minute-entry" title="${x.label}">
@@ -429,8 +389,7 @@ function renderTimetable(){
         </div>
       </div>`).join("");
 
-  document.getElementById("timetableRows").innerHTML=
-    rows || '<div class="tt-empty">表示できる時刻がありません。</div>';
+  document.getElementById("timetableRows").innerHTML=rows || '<div class="tt-empty">表示できる時刻がありません。</div>';
 }
 
 function openStationModal(){
@@ -499,7 +458,7 @@ async function init(){
   renderTimetable();
   setupSimpleMapInteraction();
   setupContentSwipe();
-  updateDynamicBg("gate"); // 初期化時にトップ画面背景を設定
+  updateDynamicBg("gate");
   setTimeout(()=>{
     const s=document.getElementById("splashScreen");
     if(s){
