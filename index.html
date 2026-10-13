@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>三角線 リアルタイムナビ</title>
-<link rel="stylesheet" href="./styles.css?v=38">
+  <link rel="stylesheet" href="./styles.css?v=38">
 </head>
 <body class="splash-active">
   <div id="splashScreen" class="splash-screen">
@@ -30,16 +30,17 @@
     </header>
 
     <main class="app-main">
-      <div class="gate-fixed-bg"></div>
+      <!-- 最背面に配置する固定背景要素（スクロールしても絶対伸びません） -->
+      <div class="gate-fixed-bg" id="gateFixedBg"></div>
+      <div class="app-fixed-bg" id="appFixedBg"></div>
+
       <section class="station-gate" id="stationGate">
         <div class="station-gate-scroll">
           <section class="operation-banner">
             <div class="operation-dot"></div>
-            <div class="gate-fixed-bg" id="gateFixedBg"></div>
-            <div class="app-fixed-bg" id="appFixedBg"></div>
             <div>
               <span class="kicker">OPERATION STATUS</span>
-              <strong>三角線　平常運転</strong>
+              <strong>三角線 平常運転</strong>
               <p>現在、大きな遅れや運休の情報はありません。</p>
             </div>
           </section>
@@ -149,7 +150,8 @@
     </div>
     <div id="sheetBody" class="sheet-body"></div>
   </section>
-<script src="./mock-data.js?v=38"></script>
+
+  <script src="./mock-data.js?v=38"></script>
   <script src="./route-geometry.js?v=38"></script>
   <script src="./timetable-data.js?v=38"></script>
   <script src="./app.js?v=38"></script>
