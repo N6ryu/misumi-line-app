@@ -2,17 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>三角線 リアルタイムナビ</title>
-  <link rel="stylesheet" href="./styles.css?v=39">
+<link rel="stylesheet" href="./styles.css?v=38">
 </head>
 <body class="splash-active">
-  <!-- 固定背景（画面最背面に独立配置） -->
-  <div class="gate-fixed-bg" id="gateFixedBg"></div>
-  <div class="app-fixed-bg" id="appFixedBg"></div>
-
-  <!-- スプラッシュ画面 -->
   <div id="splashScreen" class="splash-screen">
     <div class="splash-bg"></div>
     <div class="splash-inner">
@@ -23,7 +18,6 @@
   </div>
 
   <div class="app-shell">
-    <!-- ヘッダー -->
     <header class="app-header">
       <div class="brand brand-text-logo">
         <div>
@@ -36,14 +30,13 @@
     </header>
 
     <main class="app-main">
-      <!-- 1ページ目：駅選択ゲート -->
       <section class="station-gate" id="stationGate">
         <div class="station-gate-scroll">
           <section class="operation-banner">
             <div class="operation-dot"></div>
             <div>
               <span class="kicker">OPERATION STATUS</span>
-              <strong>三角線 平常運転</strong>
+              <strong>三角線　平常運転</strong>
               <p>現在、大きな遅れや運休の情報はありません。</p>
             </div>
           </section>
@@ -58,7 +51,6 @@
         </div>
       </section>
 
-      <!-- View 0: 列車位置 -->
       <section class="view" data-view="0" id="viewPosition">
         <div class="view-scroll position-bg" id="positionScroller">
           <section class="route-panel">
@@ -78,7 +70,6 @@
         </div>
       </section>
 
-      <!-- View 1: 地図 -->
       <section class="view" data-view="1" id="viewMap">
         <div class="view-scroll map-bg">
           <div class="page-title">
@@ -102,7 +93,6 @@
         </div>
       </section>
 
-      <!-- View 2: 時刻表 -->
       <section class="view" data-view="2" id="viewTimetable">
         <div class="view-scroll timetable-bg">
           <div class="page-title">
@@ -127,7 +117,6 @@
       </section>
     </main>
 
-    <!-- ボトムナビゲーション -->
     <nav class="bottom-nav" id="bottomNav" hidden>
       <button class="nav-btn active" data-target="0"><span class="nav-icon">🚃</span><span>列車位置</span></button>
       <button class="nav-btn" data-target="1"><span class="nav-icon">⌖</span><span>地図</span></button>
@@ -135,12 +124,10 @@
     </nav>
   </div>
 
-  <!-- フローティング駅選択ボタン -->
   <button type="button" class="station-fab" id="stationFab" hidden>
     <span class="fab-icon">◎</span><span>駅選択</span>
   </button>
 
-  <!-- 時刻表駅選択モーダル -->
   <div class="station-modal-backdrop" id="stationModalBackdrop" hidden></div>
   <section class="station-modal" id="stationModal" hidden>
     <div class="station-modal-head">
@@ -150,7 +137,6 @@
     <div id="ttStationGrid" class="station-grid modal-grid"></div>
   </section>
 
-  <!-- 列車詳細シート -->
   <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
   <section class="bottom-sheet" id="bottomSheet" hidden>
     <div class="sheet-handle"></div>
@@ -160,10 +146,9 @@
     </div>
     <div id="sheetBody" class="sheet-body"></div>
   </section>
-
-  <script src="./mock-data.js?v=39"></script>
-  <script src="./route-geometry.js?v=39"></script>
-  <script src="./timetable-data.js?v=39"></script>
-  <script src="./app.js?v=39"></script>
+<script src="./mock-data.js?v=38"></script>
+  <script src="./route-geometry.js?v=38"></script>
+  <script src="./timetable-data.js?v=38"></script>
+  <script src="./app.js?v=38"></script>
 </body>
 </html>
