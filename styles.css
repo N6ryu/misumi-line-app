@@ -502,3 +502,424 @@
 .station-modal{
   position:fixed;left:50%;bottom:0;z-index:61;
   transform:translate(-50%,102%);
+  width:min(520px,100%);
+  max-height:76dvh;
+  overflow:auto;
+  background:#f7fbfd;
+  border-radius:22px 22px 0 0;
+  padding:10px 12px max(18px,env(safe-area-inset-bottom));
+  transition:.18s;
+  box-shadow:0 -10px 30px rgba(20,50,70,.18);
+}
+.station-modal.open{transform:translate(-50%,0)}
+.station-modal-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:3px 4px 9px;
+}
+.station-modal-head strong{font-size:17px}
+.station-modal-head button{
+  width:38px;height:38px;border:0;border-radius:50%;
+  background:#e9f0f4;font-size:23px;
+}
+.modal-grid{margin-top:2px}
+
+/* v33: Leafletで地図と列車位置を完全連動 */
+.leaflet-map{
+  width:100%;
+  height:100%;
+  min-height:430px;
+}
+
+.external-map-shell{
+  position:relative;
+  height:min(62dvh,580px);
+  min-height:430px;
+  overflow:hidden;
+}
+
+.station-map-icon-wrap,
+.train-map-icon-wrap{
+  background:transparent !important;
+  border:none !important;
+}
+
+.station-map-icon-wrap{
+  display:flex !important;
+  align-items:center;
+  gap:4px;
+  white-space:nowrap;
+}
+
+.station-map-dot{
+  display:block;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#fff;
+  border:3px solid #1676bd;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+
+.station-map-name{
+  display:block;
+  padding:1px 4px;
+  border-radius:5px;
+  background:rgba(255,255,255,.80);
+  color:#17364c;
+  font-size:10px;
+  font-weight:900;
+  text-shadow:0 1px 0 #fff;
+}
+
+.train-map-marker{
+  width:74px;
+  height:82px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));
+}
+
+.train-map-marker img{
+  width:58px;
+  height:58px;
+  object-fit:contain;
+  display:block;
+}
+
+.train-map-marker span{
+  margin-top:-4px;
+  max-width:88px;
+  padding:2px 6px;
+  border-radius:999px;
+  background:rgba(255,255,255,.92);
+  color:#17364c;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+/* 旧iframeオーバーレイ方式は非表示 */
+.osm-frame,
+.map-train-overlay{
+  display:none !important;
+}
+
+/* v34: 地図安定化 + 時刻表を駅掲示型へ */
+.leaflet-map{
+  width:100%;
+  height:100%;
+  min-height:430px;
+  background:#dcebf4;
+}
+.leaflet-container{
+  width:100% !important;
+  height:100% !important;
+}
+
+/* 時刻表 */
+.tt-panel{
+  background:rgba(255,255,255,.78);
+}
+
+.tt-head{
+  grid-template-columns:1fr 64px 1fr;
+  background:#0877bd;
+  padding:0;
+  min-height:56px;
+  border-top:2px solid #075f98;
+  border-bottom:2px solid #075f98;
+}
+.tt-head>span{
+  display:grid;
+  place-items:center;
+  height:100%;
+  padding:7px 4px;
+  font-size:10px;
+  line-height:1.15;
+}
+.tt-head>span:nth-child(2){
+  background:#075f98;
+  font-size:20px;
+  font-weight:900;
+}
+.tt-head b{
+  font-size:10px;
+}
+
+.tt-rows{
+  max-height:calc(100dvh - 292px);
+  overflow-y:auto;
+  background:rgba(255,255,255,.82);
+}
+
+.hour-row{
+  display:grid;
+  grid-template-columns:1fr 64px 1fr;
+  min-height:55px;
+  border-bottom:1px solid rgba(93,131,156,.55);
+}
+.hour-row:nth-child(even){
+  background:rgba(207,249,249,.58);
+}
+.hour-row:nth-child(odd){
+  background:rgba(255,255,255,.72);
+}
+
+.hour-center{
+  display:grid;
+  place-items:center;
+  background:#0877bd;
+  color:#fff;
+  font-size:23px;
+  font-weight:900;
+  border-left:1px solid #075f98;
+  border-right:1px solid #075f98;
+}
+
+.minute-side{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:3px 8px;
+  padding:7px 8px;
+}
+.minute-side.up{
+  justify-content:flex-end;
+  text-align:right;
+}
+.minute-side.down{
+  justify-content:flex-start;
+  text-align:left;
+}
+
+.minute-entry{
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:28px;
+}
+.minute-entry strong{
+  font-size:20px;
+  line-height:1;
+  color:#111;
+  font-weight:800;
+}
+.minute-entry small{
+  max-width:68px;
+  margin-top:2px;
+  font-size:7px;
+  line-height:1.05;
+  color:#415766;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.minute-side.up .minute-entry small{text-align:right}
+.minute-side.down .minute-entry small{text-align:left}
+
+.no-train{
+  color:#a4b3bd;
+  font-size:14px;
+}
+
+.tt-station-button{
+  margin-bottom:8px;
+}
+
+/* v35 splash */
+.splash-inner{
+  background:transparent !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  box-shadow:none !important;
+}
+.splash-logo{
+  width:min(64vw,300px);
+  max-height:44dvh;
+  object-fit:contain;
+  filter:drop-shadow(0 7px 18px rgba(0,0,0,.20));
+}
+.splash-title,
+.splash-subtitle{
+  display:none;
+}
+
+/* v35 custom OSM map */
+.simple-map{
+  position:relative;
+  width:100%;
+  height:100%;
+  min-height:430px;
+  overflow:hidden;
+  background:#d9e8f1;
+  touch-action:none;
+  user-select:none;
+}
+.map-tiles,
+.map-route-svg,
+.map-markers{
+  position:absolute;
+  inset:0;
+}
+.map-tiles{z-index:1}
+.osm-tile{
+  position:absolute;
+  width:256px;
+  height:256px;
+  max-width:none;
+  user-select:none;
+  pointer-events:none;
+}
+.map-route-svg{
+  z-index:2;
+  pointer-events:none;
+  overflow:visible;
+}
+.map-route-line{
+  fill:none;
+  stroke:#1676bd;
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  opacity:.82;
+  filter:drop-shadow(0 1px 1px rgba(255,255,255,.9));
+}
+.map-station-dot{
+  fill:#fff;
+  stroke:#0e6ca9;
+  stroke-width:2.5;
+}
+.map-station-label{
+  font-size:10px;
+  font-weight:900;
+  fill:#16364d;
+  paint-order:stroke;
+  stroke:rgba(255,255,255,.95);
+  stroke-width:3px;
+}
+.map-markers{
+  z-index:3;
+  pointer-events:none;
+}
+.simple-train-marker{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:70px;
+  border:0;
+  background:transparent;
+  padding:0;
+  pointer-events:auto;
+  cursor:pointer;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.24));
+}
+.simple-train-marker img{
+  width:58px;
+  height:58px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto;
+}
+.simple-train-marker span{
+  display:inline-block;
+  margin-top:-5px;
+  padding:2px 6px;
+  border-radius:999px;
+  background:rgba(255,255,255,.92);
+  color:#17364c;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.map-controls{
+  position:absolute;
+  z-index:5;
+  right:10px;
+  top:10px;
+  display:grid;
+  gap:5px;
+}
+.map-controls button{
+  min-width:40px;
+  height:40px;
+  border:1px solid rgba(86,113,129,.35);
+  border-radius:10px;
+  background:rgba(255,255,255,.94);
+  color:#17364c;
+  font-weight:900;
+  font-size:20px;
+  box-shadow:0 2px 7px rgba(0,0,0,.12);
+}
+.map-controls #mapReset{
+  font-size:10px;
+  padding:0 7px;
+}
+
+@media(max-width:420px){.header-text-logo{height:22px}}
+
+/* v38: station selection / transitions / swipe */
+.station-picker-card{display:none !important;}
+.station-grid-main{
+  margin-top:16px;
+  padding:2px 0 28px;
+}
+.station-grid-main .station-pick-btn{
+  min-height:58px;
+  border:1px solid rgba(255,255,255,.72);
+  background:linear-gradient(135deg,#0b72d9 0%,#2497f1 52%,#58b8f6 100%);
+  color:#fff;
+  box-shadow:0 7px 18px rgba(16,103,176,.22), inset 0 1px 0 rgba(255,255,255,.22);
+  border-radius:15px;
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+.station-grid-main .station-pick-btn strong{
+  color:#fff;
+  font-size:calc(16px*var(--font-scale));
+  text-shadow:0 1px 2px rgba(0,48,91,.18);
+}
+.station-grid-main .station-mark{
+  width:14px;height:14px;
+  background:rgba(255,255,255,.95);
+  border:3px solid rgba(255,255,255,.95);
+  box-shadow:0 0 0 3px rgba(255,255,255,.20);
+}
+.station-grid-main .station-pick-btn:active{transform:scale(.97);}
+.station-grid-main .station-pick-btn.station-picked{
+  transform:scale(1.06);
+  filter:brightness(1.08);
+  box-shadow:0 0 0 6px rgba(47,160,241,.18),0 12px 28px rgba(16,103,176,.32);
+}
+.station-gate{
+  transform:translateY(0) scale(1);
+  opacity:1;
+  transition:transform .42s cubic-bezier(.22,.75,.24,1),opacity .34s ease,filter .34s ease;
+  transform-origin:center center;
+  /* 1ページ目の背景画像の固定設定（不自然な拡大の防止） */
+  background-attachment: fixed !important;
+  background-size: cover !important;
+  background-position: center bottom !important;
+}
+.station-gate.gate-leaving{
+  transform:translateY(-28px) scale(.97);
+  opacity:0;
+  filter:blur(6px);
+}
+#viewPosition.view-arriving{
+  opacity:0;
+  transform:translateY(30px) scale(.985);
+  transition:opacity .42s ease,transform .48s cubic-bezier(.2,.8,.2,1);
+}
+#viewPosition.view-arriving.view-arriving-active{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+
+/* モバイル（iOS Safariなど）での画面フィット対応 */
+@supports (-webkit-touch-callout: none) {
+  .station-gate {
+    background-attachment: scroll !important;
+    background-size: 100% auto !important;
+  }
+}
