@@ -1,39 +1,93 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
-  <title>三角線 リアルタイムナビ</title>
-  <link rel="stylesheet" href="./styles.css?v=38">
-</head>
-<body class="splash-active">
-  <div id="splashScreen" class="splash-screen">
-    <div class="splash-bg"></div>
-    <div class="splash-inner">
-      <img src="./assets/splash-logo-v35.png" class="splash-logo" alt="三角線 リアルタイムナビ">
-      <p class="splash-title">三角線 リアルタイムナビ</p>
-      <p class="splash-subtitle">駅を選んで、いま走っている列車を見る</p>
-    </div>
-  </div>
+let selectedStation = null, loadedTrains = [], currentView = 0;
+let currentSubView = "position"; // ★追加：1P内のサブビュー状態
 
-  <div class="app-shell">
-    <header class="app-header">
-      <div class="brand brand-text-logo">
-        <div>
-          <p class="eyebrow">三角線 / Prototype</p>
-          <img src="./assets/header-text-logo-v36.png" class="header-text-logo" alt="JRみすみ線 リアルタイムナビ">
-        </div>
-      </div>
-      <span class="prototype-chip">試作</span>
-      <button class="font-btn" id="fontBtn" type="button">文字：標準</button>
-    </header>
+// (中略... 変数宣言などはそのまま)
 
-    <main class="app-main">
+// ★追加：1P内のサブ切り替え設定
+const subNavBtns = document.querySelectorAll('.sub-nav-btn');
+const subViews = {
+  position: document.getElementById('subViewPosition'),
+  map: document.getElementById('subViewMap')
+};
+
+subNavBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentSubView = btn.dataset.sub;
+    
+    // タブの見た目更新
+    subNavBtns.forEach(b => b.classList.toggle('active', b.dataset.sub === currentSubView));
+    // 表示内容更新
+    Object.keys(subViews).forEach(k => {
+      if(subViews[k]) subViews[k].style.display = k === currentSubView ? 'block' : 'none';
+    });
+    
+    updateDynamicBg(currentView); // 背景も連動して切り替え
+
+    // 地図が開かれたときの再描画
+    if (currentSubView === "map") {
+      setTimeout(() => {
+        resetSimpleMapToRoute();
+        renderSimpleMap();
+      }, 80);
+    } else {
+      if(selectedStation) setTimeout(()=>scrollToSelectedStation(false),80);
+    }
+  });
+});
+
+// 背景切り替えロジックの修正
+function updateDynamicBg(viewType) {
+  if (!fixedBg) return;
+  fixedBg.className = "gate-fixed-bg"; 
+  if (viewType === "gate") {
+    fixedBg.classList.add("bg-gate");
+  } else if (viewType === 0) {
+    // 1Pはサブビューによって背景を変える
+    if (currentSubView === "position") {
+      fixedBg.classList.add("bg-position");
+    } else {
+      fixedBg.classList.add("bg-map");
+    }
+  } else if (viewType === 1) {
+    fixedBg.classList.add("bg-timetable"); // 2Pが時刻表
+  } else if (viewType === 2) {
+    fixedBg.classList.add("bg-board");     // 3Pが掲示板
+  }
+}
+
+// setView関数の修正
+function setView(i){
+  currentView = Math.max(0, Math.min(2, i));
+  gate.hidden = true;
+  views.forEach((v, n) => v.classList.toggle("active", n === currentView));
+  navButtons.forEach((b, n) => b.classList.toggle("active", n === currentView));
+  
+  updateDynamicBg(currentView);
+
+  // 1P表示時
+  if(currentView === 0) {
+    if(currentSubView === "position" && selectedStation) {
+      setTimeout(()=>scrollToSelectedStation(false),80);
+    } else if (currentSubView === "map") {
+      setTimeout(()=>{
+        resetSimpleMapToRoute();
+        renderSimpleMap();
+      },80);
+    }
+  }
+  // 2P表示時（時刻表）
+  if(currentView === 1){
+    if(selectedStation) setTimetableStation(selectedStation);
+    renderTimetable();
+  }
+  // 3P表示時（掲示板）は特別な処理なし
+}
+<main class="app-main">
       <!-- 画面固定かつ動的に画像が切り替わる背景用コンテナ -->
       <div class="gate-fixed-bg bg-gate" id="fixedBg"></div>
 
       <section class="station-gate" id="stationGate">
+        <!-- ゲート画面はそのまま -->
         <div class="station-gate-scroll">
           <section class="operation-banner">
             <div class="operation-dot"></div>
@@ -43,19 +97,27 @@
               <p>現在、大きな遅れや運休の情報はありません。</p>
             </div>
           </section>
-
           <div class="gate-hero">
             <span class="kicker">SELECT YOUR STATION</span>
             <h2>利用する駅を選んでください</h2>
             <p>選んだ駅を起点に、列車位置・地図・時刻表を確認できます。</p>
           </div>
-
           <div class="station-grid station-grid-main" id="stationGrid"></div>
         </div>
       </section>
 
-      <section class="view" data-view="0" id="viewPosition">
-        <div class="view-scroll position-bg" id="positionScroller">
+      <!-- 1P: 列車位置 & 地図 統合ビュー -->
+      <section class="view" data-view="0" id="viewIntegrated">
+        <!-- 切り替えトグル -->
+        <div class="integrated-header">
+          <div class="sub-nav-toggle">
+            <button class="sub-nav-btn active" data-sub="position">列車位置</button>
+            <button class="sub-nav-btn" data-sub="map">地図</button>
+          </div>
+        </div>
+
+        <!-- サブビュー: 列車位置 -->
+        <div class="view-scroll position-bg sub-view" id="subViewPosition">
           <section class="route-panel">
             <div class="route-sticky-head">
               <div class="section-heading">
@@ -71,10 +133,9 @@
             <div id="dualRoute" class="dual-route"></div>
           </section>
         </div>
-      </section>
 
-      <section class="view" data-view="1" id="viewMap">
-        <div class="view-scroll map-bg">
+        <!-- サブビュー: 地図 -->
+        <div class="view-scroll map-bg sub-view" id="subViewMap" style="display:none;">
           <div class="page-title">
             <span class="kicker">MAP</span>
             <h2>地図上の列車位置</h2>
@@ -96,14 +157,14 @@
         </div>
       </section>
 
-      <section class="view" data-view="2" id="viewTimetable">
+      <!-- 2P: 時刻表 -->
+      <section class="view" data-view="1" id="viewTimetable">
         <div class="view-scroll timetable-bg">
           <div class="page-title">
             <span class="kicker">TIMETABLE</span>
             <h2>駅別時刻表</h2>
             <p>左：上り／中央：時刻／右：下り</p>
           </div>
-
           <section class="tt-panel">
             <button type="button" id="ttStationButton" class="tt-station-button">
               <span>表示駅</span><strong id="ttStationName">三角</strong><b>変更⌄</b>
@@ -118,41 +179,39 @@
           <p class="tt-source">JR九州「駅別時刻表」（2026年10月号掲載データ）をもとにプロトタイプへ収録しています。</p>
         </div>
       </section>
+
+      <!-- 3P: 新設 みすみ掲示板 -->
+      <section class="view" data-view="2" id="viewBoard">
+        <div class="view-scroll board-bg">
+          <div class="page-title" style="padding: 14px;">
+            <span class="kicker">COMMUNITY</span>
+            <h2>みすみ掲示板</h2>
+            <p>沿線のイベントや最新情報をお届けします。</p>
+          </div>
+          <div class="board-list">
+            <div class="board-card">
+              <div class="board-meta"><span class="board-date">2026.10.18</span><span class="board-tag event">イベント</span></div>
+              <h3>三角港 海風マルシェ開催</h3>
+              <p>地元の海産物や農産物が大集合！美味しい屋台も多数出店します。ぜひお越しください。</p>
+            </div>
+            <div class="board-card">
+              <div class="board-meta"><span class="board-date">2026.10.25</span><span class="board-tag news">お知らせ</span></div>
+              <h3>みすみ秋の収穫祭</h3>
+              <p>駅前広場にて、秋の味覚を楽しめる収穫祭を開催。特産品のみかん詰め放題イベントもあります。</p>
+            </div>
+            <div class="board-card">
+              <div class="board-meta"><span class="board-date">2026.11.03</span><span class="board-tag event">イベント</span></div>
+              <h3>三角線 フォトコンテスト</h3>
+              <p>美しい海沿いを走る三角線の写真を募集します。入賞者には素敵なプレゼントも！</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
+    <!-- ボトムナビゲーションの変更 -->
     <nav class="bottom-nav" id="bottomNav" hidden>
-      <button class="nav-btn active" data-target="0"><span class="nav-icon">🚃</span><span>列車位置</span></button>
-      <button class="nav-btn" data-target="1"><span class="nav-icon">⌖</span><span>地図</span></button>
-      <button class="nav-btn" data-target="2"><span class="nav-icon">◷</span><span>時刻表</span></button>
+      <button class="nav-btn active" data-target="0"><span class="nav-icon">🗺️</span><span>位置/地図</span></button>
+      <button class="nav-btn" data-target="1"><span class="nav-icon">◷</span><span>時刻表</span></button>
+      <button class="nav-btn" data-target="2"><span class="nav-icon">📋</span><span>掲示板</span></button>
     </nav>
-  </div>
-
-  <button type="button" class="station-fab" id="stationFab" hidden>
-    <span class="fab-icon">◎</span><span>駅選択</span>
-  </button>
-
-  <div class="station-modal-backdrop" id="stationModalBackdrop" hidden></div>
-  <section class="station-modal" id="stationModal" hidden>
-    <div class="station-modal-head">
-      <strong>時刻表の駅を選択</strong>
-      <button type="button" id="stationModalClose">×</button>
-    </div>
-    <div id="ttStationGrid" class="station-grid modal-grid"></div>
-  </section>
-
-  <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
-  <section class="bottom-sheet" id="bottomSheet" hidden>
-    <div class="sheet-handle"></div>
-    <div class="sheet-head">
-      <div><span class="kicker">TRAIN</span><h2 id="sheetTitle">詳細</h2></div>
-      <button class="sheet-close" id="sheetClose">×</button>
-    </div>
-    <div id="sheetBody" class="sheet-body"></div>
-  </section>
-
-  <script src="./mock-data.js?v=38"></script>
-  <script src="./route-geometry.js?v=38"></script>
-  <script src="./timetable-data.js?v=38"></script>
-  <script src="./app.js?v=38"></script>
-</body>
-</html>
