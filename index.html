@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>三角線 リアルタイムナビ</title>
-  <link rel="stylesheet" href="./styles.css?v=38">
+  <link rel="stylesheet" href="./styles.css?v=39">
 </head>
 <body class="splash-active">
   <div id="splashScreen" class="splash-screen">
@@ -30,9 +30,10 @@
     </header>
 
     <main class="app-main">
-      <!-- 画面固定かつ動的に画像が切り替わる背景用コンテナ -->
+      <!-- 画面固定背景 -->
       <div class="gate-fixed-bg bg-gate" id="fixedBg"></div>
 
+      <!-- トップ：駅選択画面 -->
       <section class="station-gate" id="stationGate">
         <div class="station-gate-scroll">
           <section class="operation-banner">
@@ -47,13 +48,14 @@
           <div class="gate-hero">
             <span class="kicker">SELECT YOUR STATION</span>
             <h2>利用する駅を選んでください</h2>
-            <p>選んだ駅を起点に、列車位置・地図・時刻表を確認できます。</p>
+            <p>選んだ駅を起点に、列車位置・時刻表・イベント情報を確認できます。</p>
           </div>
 
           <div class="station-grid station-grid-main" id="stationGrid"></div>
         </div>
       </section>
 
+      <!-- タブ1：列車位置（リスト ↔ 地図 切替対応） -->
       <section class="view" data-view="0" id="viewPosition">
         <div class="view-scroll position-bg" id="positionScroller">
           <section class="route-panel">
@@ -62,46 +64,53 @@
                 <div><span class="kicker">TRAIN POSITION</span><h2>現在の列車位置</h2></div>
                 <span class="sample-badge">10:28取得</span>
               </div>
-              <div class="route-columns-head">
+
+              <!-- 上部の表示切替スイッチ（リスト ↔ 地図） -->
+              <div class="display-toggle-bar">
+                <button type="button" class="toggle-btn active" id="toggleListBtn">
+                  <span class="toggle-icon">🚃</span> 路線図リスト
+                </button>
+                <button type="button" class="toggle-btn" id="toggleMapBtn">
+                  <span class="toggle-icon">⌖</span> 地図で見る
+                </button>
+              </div>
+
+              <!-- リスト表示時のヘッダー -->
+              <div class="route-columns-head" id="routeColumnsHead">
                 <span>上り<br><b>熊本方面</b></span>
                 <span>駅</span>
                 <span>下り<br><b>三角方面</b></span>
               </div>
             </div>
+
+            <!-- リスト表示エリア -->
             <div id="dualRoute" class="dual-route"></div>
+
+            <!-- 地図表示エリア（初期状態は非表示） -->
+            <div id="mapContainer" class="map-container-shell" hidden>
+              <div id="simpleMap" class="simple-map" aria-label="三角線の列車位置地図">
+                <div id="mapTiles" class="map-tiles"></div>
+                <svg id="mapRouteSvg" class="map-route-svg" aria-hidden="true"></svg>
+                <div id="mapMarkers" class="map-markers"></div>
+                <div class="map-controls">
+                  <button type="button" id="mapZoomIn" aria-label="拡大">＋</button>
+                  <button type="button" id="mapZoomOut" aria-label="縮小">−</button>
+                  <button type="button" id="mapReset" aria-label="三角線全体を表示">全体</button>
+                </div>
+              </div>
+              <p class="map-note">※ 初期表示は三角駅〜熊本駅が収まる範囲です。アイコンで拡大・移動ができます。</p>
+            </div>
           </section>
         </div>
       </section>
 
-      <section class="view" data-view="1" id="viewMap">
-        <div class="view-scroll map-bg">
-          <div class="page-title">
-            <span class="kicker">MAP</span>
-            <h2>地図上の列車位置</h2>
-            <p>OpenStreetMapを背景に、受領した緯度経度へ列車GIFを重ねています。</p>
-          </div>
-          <div class="external-map-shell">
-            <div id="simpleMap" class="simple-map" aria-label="三角線の列車位置地図">
-              <div id="mapTiles" class="map-tiles"></div>
-              <svg id="mapRouteSvg" class="map-route-svg" aria-hidden="true"></svg>
-              <div id="mapMarkers" class="map-markers"></div>
-              <div class="map-controls">
-                <button type="button" id="mapZoomIn" aria-label="拡大">＋</button>
-                <button type="button" id="mapZoomOut" aria-label="縮小">−</button>
-                <button type="button" id="mapReset" aria-label="三角線全体を表示">全体</button>
-              </div>
-            </div>
-          </div>
-          <p class="map-note">※ 初期表示は三角駅〜熊本駅が画面内に収まる範囲です。各駅をアイコンで表示し、列車位置は地図の拡大・縮小・移動に連動します。</p>
-        </div>
-      </section>
-
-      <section class="view" data-view="2" id="viewTimetable">
+      <!-- タブ2：駅別時刻表 -->
+      <section class="view" data-view="1" id="viewTimetable">
         <div class="view-scroll timetable-bg">
           <div class="page-title">
             <span class="kicker">TIMETABLE</span>
             <h2>駅別時刻表</h2>
-            <p>左：上り／中央：時刻／右：下り</p>
+            <p>左：上り（熊本方面）／中央：時／右：下り（三角方面）</p>
           </div>
 
           <section class="tt-panel">
@@ -115,16 +124,53 @@
             </div>
             <div id="timetableRows" class="tt-rows"></div>
           </section>
-          <p class="tt-source">JR九州「駅別時刻表」（2026年10月号掲載データ）をもとにプロトタイプへ収録しています。</p>
+          <p class="tt-source">JR九州「駅別時刻表」（2026年10月号掲載データ）をもとに収録しています。</p>
+        </div>
+      </section>
+
+      <!-- タブ3：イベント情報 -->
+      <section class="view" data-view="2" id="viewEvent">
+        <div class="view-scroll event-bg">
+          <div class="page-title">
+            <span class="kicker">EVENTS</span>
+            <h2>沿線イベント・お知らせ</h2>
+            <p>三角線沿線の観光イベントやおでかけ情報をご紹介します。</p>
+          </div>
+
+          <div class="event-card-list">
+            <article class="event-card">
+              <span class="event-tag">観光・マルシェ</span>
+              <h3>三角港レトロマルシェ 2026</h3>
+              <p class="event-date">📅 開催日：2026年10月24日(土)・25日(日)</p>
+              <p class="event-location">📍 場所：JR三角駅前・三角港フェリーターミナル周辺</p>
+              <p class="event-desc">地元の海の幸や人気スイーツが勢ぞろい！ジャズ演奏やワークショップも開催されます。</p>
+            </article>
+
+            <article class="event-card">
+              <span class="event-tag">特別列車</span>
+              <h3>特急「A列車で行こう」秋の限定運行</h3>
+              <p class="event-date">📅 運行日：土日祝日（好評運行中）</p>
+              <p class="event-location">📍 区間：熊本駅 〜 三角駅</p>
+              <p class="event-desc">ジャズが流れるシックな車内で、ハイボールや天草デコポンジュースを愉しむ上質な旅。</p>
+            </article>
+
+            <article class="event-card">
+              <span class="event-tag">ハイキング</span>
+              <h3>JR九州ウォーキング 三角線コース</h3>
+              <p class="event-date">📅 開催日：2026年11月8日(日)</p>
+              <p class="event-location">📍 スタート：網田駅（あみだえき）</p>
+              <p class="event-desc">熊本県最古の木造駅舎「網田駅」から有明海を望む絶景コースを歩くウォーキングイベント。</p>
+            </article>
+          </div>
         </div>
       </section>
     </main>
 
-    <!-- 初期表示では非表示（hidden）に設定 -->
+    <!-- 下部ナビゲーションバー（3つのタブ） -->
     <nav class="bottom-nav" id="bottomNav" hidden>
       <button class="nav-btn active" data-target="0"><span class="nav-icon">🚃</span><span>列車位置</span></button>
-      <button class="nav-btn" data-target="1"><span class="nav-icon">⌖</span><span>地図</span></button>
-      <button class="nav-btn" data-target="2"><span class="nav-icon">◷</span><span>時刻表</span></button>
+      <button class="nav-btn" data-target="1"><span class="nav-icon">◷</span><span>時刻表</span></button>
+      <button class="nav-btn" data-target="2"><span class="nav-icon">🎉</span><span>イベント</span></button>
     </nav>
   </div>
 
@@ -151,9 +197,9 @@
     <div id="sheetBody" class="sheet-body"></div>
   </section>
 
-  <script src="./mock-data.js?v=38"></script>
-  <script src="./route-geometry.js?v=38"></script>
-  <script src="./timetable-data.js?v=38"></script>
-  <script src="./app.js?v=38"></script>
+  <script src="./mock-data.js?v=39"></script>
+  <script src="./route-geometry.js?v=39"></script>
+  <script src="./timetable-data.js?v=39"></script>
+  <script src="./app.js?v=39"></script>
 </body>
 </html>
