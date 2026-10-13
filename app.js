@@ -18,12 +18,32 @@ const sheet=document.getElementById("bottomSheet");
 const backdrop=document.getElementById("sheetBackdrop");
 const stationModal=document.getElementById("stationModal");
 const stationModalBackdrop=document.getElementById("stationModalBackdrop");
+const fixedBg=document.getElementById("fixedBg");
+
+// 表示中の画面に合わせて固定背景を連動更新する処理
+function updateDynamicBg(viewType) {
+  if (!fixedBg) return;
+  fixedBg.className = "gate-fixed-bg"; // 一度リセット
+  if (viewType === "gate") {
+    fixedBg.classList.add("bg-gate");
+  } else if (viewType === 0) {
+    fixedBg.classList.add("bg-position");
+  } else if (viewType === 1) {
+    fixedBg.classList.add("bg-map");
+  } else if (viewType === 2) {
+    fixedBg.classList.add("bg-timetable");
+  }
+}
 
 function setView(i){
   currentView=Math.max(0,Math.min(2,i));
   gate.hidden=true;
   views.forEach((v,n)=>v.classList.toggle("active",n===currentView));
   navButtons.forEach((b,n)=>b.classList.toggle("active",n===currentView));
+  
+  // 背景切り替えを実行
+  updateDynamicBg(currentView);
+
   if(currentView===0&&selectedStation)setTimeout(()=>scrollToSelectedStation(false),80);
   if(currentView===1){
     setTimeout(()=>{
@@ -43,6 +63,7 @@ function showGate(){
   gate.hidden=false;
   bottomNav.hidden=true;
   stationFab.hidden=true;
+  updateDynamicBg("gate"); // ゲート表示時の背景に更新
 }
 
 function stationButtonHTML(s){
@@ -169,7 +190,7 @@ function openTrainDetail(id){
     <p class="source-note">${t.timetableNote}</p>`);
 }
 
-// Simple OSM map: external libraryなしでタイルと緯度経度を同期
+// Simple OSM map
 const TILE_SIZE=256;
 
 function lonToWorldX(lon,zoom){
@@ -369,12 +390,13 @@ function setTimetableStation(name){
   renderTimetable();
 }
 function renderTimetable(){
-  const data=timetableData[timetableStation]||{up:[],down:[]};
+  const data=(typeof timetableData !== 'undefined' && timetableData[timetableStation]) ? timetableData[timetableStation] : {up:[],down:[]};
 
   const hours={};
   for(let h=5;h<=23;h++) hours[h]={up:[],down:[]};
 
   function pushItems(items,side){
+    if(!items) return;
     for(const item of items){
       const [hh,mm]=item.time.split(":");
       const h=Number(hh);
@@ -393,8 +415,7 @@ function renderTimetable(){
         <div class="minute-side up">
           ${v.up.length ? v.up.map(x=>`
             <div class="minute-entry" title="${x.label}">
-              <strong>${x.minute}</strong>
-              ${x.label ? `<small>${x.label}</small>` : ""}
+              <strong>${x.minute}</strong>${x.label ? `<small>${x.label}</small>` : ""}
             </div>`).join("") : '<span class="no-train">—</span>'}
         </div>
 
@@ -403,8 +424,7 @@ function renderTimetable(){
         <div class="minute-side down">
           ${v.down.length ? v.down.map(x=>`
             <div class="minute-entry" title="${x.label}">
-              <strong>${x.minute}</strong>
-              ${x.label ? `<small>${x.label}</small>` : ""}
+              <strong>${x.minute}</strong>${x.label ? `<small>${x.label}</small>` : ""}
             </div>`).join("") : '<span class="no-train">—</span>'}
         </div>
       </div>`).join("");
@@ -425,7 +445,6 @@ document.getElementById("ttStationButton").addEventListener("click",openStationM
 document.getElementById("stationModalClose").addEventListener("click",closeStationModal);
 stationModalBackdrop.addEventListener("click",closeStationModal);
 
-// 横スワイプで 列車位置 ⇄ 地図 ⇄ 時刻表 を移動
 let swipeStartX=0,swipeStartY=0,swipeTracking=false;
 function shouldIgnoreSwipe(target){
   return !!target.closest(".simple-map,.bottom-sheet,.station-modal,button,a,input,select,textarea");
@@ -480,11 +499,14 @@ async function init(){
   renderTimetable();
   setupSimpleMapInteraction();
   setupContentSwipe();
+  updateDynamicBg("gate"); // 初期化時にトップ画面背景を設定
   setTimeout(()=>{
     const s=document.getElementById("splashScreen");
-    s.classList.add("hide");
-    document.body.classList.remove("splash-active");
-    setTimeout(()=>s.remove(),350);
+    if(s){
+      s.classList.add("hide");
+      document.body.classList.remove("splash-active");
+      setTimeout(()=>s.remove(),350);
+    }
   },1400);
 }
 init().catch(console.error);
