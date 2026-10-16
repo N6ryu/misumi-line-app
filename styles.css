@@ -350,23 +350,46 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
 .station-grid-main .station-pick-btn strong{color:#fff;font-size:calc(16px*var(--font-scale));text-shadow:0 1px 2px rgba(0,48,91,.18);}
 .station-grid-main .station-mark{width:14px;height:14px;background:rgba(255,255,255,.95);border:3px solid rgba(255,255,255,.95);box-shadow:0 0 0 3px rgba(255,255,255,.20);}
 .station-grid-main .station-pick-btn:active{transform:scale(.97);}
-.station-grid-main .station-pick-btn.station-picked{transform:scale(1.06);filter:brightness(1.08);box-shadow:0 0 0 6px rgba(47,160,241,.18),0 12px 28px rgba(16,103,176,.32);}
-.station-gate{transform:translateY(0) scale(1);opacity:1;transition:transform .42s cubic-bezier(.22,.75,.24,1),opacity .34s ease,filter .34s ease;transform-origin:center center;}
-.station-gate.gate-leaving{transform:translateY(-28px) scale(.97);opacity:0;filter:blur(6px);}
-#viewPosition.view-arriving{opacity:0;transform:translateY(30px) scale(.985);transition:opacity .42s ease,transform .48s cubic-bezier(.2,.8,.2,1);}
-#viewPosition.view-arriving.view-arriving-active{opacity:1;transform:translateY(0) scale(1);}
 
-/* 横スワイプのアニメーション */
-.swipe-exit-left{transform:translateX(-100%);transition:transform .15s ease-in;}
-.swipe-exit-right{transform:translateX(100%);transition:transform .15s ease-in;}
-.swipe-enter-left{transform:translateX(-100%);transition:transform .32s ease-out;}
-.swipe-enter-right{transform:translateX(100%);transition:transform .32s ease-out;}
-.swipe-enter-active{transform:translateX(0);}
+/* --- マルチプラットフォーム・レスポンシブ最適化 --- */
+html, body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
 
 /* 透明の箱（下部スクロール余白用スペーサー） */
 .transparent-box {
   width: 100%;
-  height: 500px; /* 必要に応じて高さを調整してください */
+  height: 80px;
   background: transparent;
   pointer-events: none;
+}
+
+@media (min-width: 600px) {
+  body {
+    background: #c3d9e8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .app-shell {
+    max-width: 480px;
+    height: min(100dvh, 900px);
+    border-radius: 24px;
+    box-shadow: 0 12px 40px rgba(18, 52, 77, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .gate-fixed-bg {
+    max-width: 480px;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .station-fab {
+    right: calc(50vw - 220px);
+  }
 }
