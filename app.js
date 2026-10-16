@@ -10,6 +10,50 @@ let simpleMapState={
   startCenterPx:null
 };
 
+/* 各メニュー（タブ）ごとのスポット・注釈説明データ */
+const menuSpotData = {
+  0: {
+    icon: "📍",
+    title: "長部田海床路",
+    desc: "潮の満ち引きで姿を変える、海へ続く道。"
+  },
+  1: {
+    icon: "⏱️",
+    title: "網田駅舎カフェ",
+    desc: "熊本県最古の木造駅舎内でゆったり列車を待てるカフェ空間。"
+  },
+  2: {
+    icon: "⛵",
+    title: "三角西港（世界文化遺産）",
+    desc: "明治日本の産業革命遺産。レトロな洋館と美しい港町散策を楽しめます。"
+  }
+};
+
+/* 各メニューのカード文面を更新する関数 */
+function updateMenuSpotCards() {
+  // タブ0: 列車位置
+  const pData = menuSpotData[0];
+  if (pData) {
+    document.getElementById("spotIconPosition").textContent = pData.icon;
+    document.getElementById("spotTitlePosition").textContent = pData.title;
+    document.getElementById("spotDescPosition").textContent = pData.desc;
+  }
+  // タブ1: 時刻表
+  const tData = menuSpotData[1];
+  if (tData) {
+    document.getElementById("spotIconTimetable").textContent = tData.icon;
+    document.getElementById("spotTitleTimetable").textContent = tData.title;
+    document.getElementById("spotDescTimetable").textContent = tData.desc;
+  }
+  // タブ2: イベント
+  const eData = menuSpotData[2];
+  if (eData) {
+    document.getElementById("spotIconEvent").textContent = eData.icon;
+    document.getElementById("spotTitleEvent").textContent = eData.title;
+    document.getElementById("spotDescEvent").textContent = eData.desc;
+  }
+}
+
 const gate=document.getElementById("stationGate");
 const views=[...document.querySelectorAll(".view")];
 const navButtons=[...document.querySelectorAll(".nav-btn[data-target]")];
@@ -468,6 +512,7 @@ async function init(){
   renderStationGrid();
   renderDualRoute();
   renderTimetable();
+  updateMenuSpotCards();
   setupSimpleMapInteraction();
   setupContentSwipe();
   updateDynamicBg("gate");
