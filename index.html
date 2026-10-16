@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>三角線 リアルタイムナビ</title>
-  <link rel="stylesheet" href="./styles.css?v=42">
+  <link rel="stylesheet" href="./styles.css?v=43">
 </head>
 <body class="splash-active">
   <div id="splashScreen" class="splash-screen">
@@ -55,7 +55,7 @@
         </div>
       </section>
 
-      <!-- タブ1：列車位置（リスト ↔ 地図 切替対応） -->
+      <!-- タブ1：列車位置 -->
       <section class="view" data-view="0" id="viewPosition">
         <div class="view-scroll position-bg" id="positionScroller">
           <section class="route-panel">
@@ -105,12 +105,12 @@
           <!-- 透明な空白スペーサー -->
           <div class="transparent-box" aria-hidden="true"></div>
 
-          <!-- 透明な空白の「下」に表示される沿線スポット紹介カード -->
-          <article class="spot-card">
-            <span class="spot-icon">📍</span>
+          <!-- 【列車位置タブ用】説明カード -->
+          <article class="spot-card" id="spotCardPosition">
+            <span class="spot-icon" id="spotIconPosition">📍</span>
             <div class="spot-content">
-              <h3 class="spot-title">長部田海床路</h3>
-              <p class="spot-desc">潮の満ち引きで姿を変える、海へ続く道。</p>
+              <h3 class="spot-title" id="spotTitlePosition">長部田海床路</h3>
+              <p class="spot-desc" id="spotDescPosition">潮の満ち引きで姿を変える、海へ続く道。</p>
             </div>
           </article>
         </div>
@@ -141,12 +141,12 @@
           <!-- 透明な空白スペーサー -->
           <div class="transparent-box" aria-hidden="true"></div>
 
-          <!-- 透明な空白の「下」に表示される沿線スポット紹介カード -->
-          <article class="spot-card">
-            <span class="spot-icon">📍</span>
+          <!-- 【時刻表タブ用】説明カード -->
+          <article class="spot-card" id="spotCardTimetable">
+            <span class="spot-icon" id="spotIconTimetable">⏱️</span>
             <div class="spot-content">
-              <h3 class="spot-title">長部田海床路</h3>
-              <p class="spot-desc">潮の満ち引きで姿を変える、海へ続く道。</p>
+              <h3 class="spot-title" id="spotTitleTimetable">網田駅舎カフェ</h3>
+              <p class="spot-desc" id="spotDescTimetable">熊本県最古の木造駅舎内でゆったり列車を待てるカフェ空間。</p>
             </div>
           </article>
         </div>
@@ -190,12 +190,12 @@
           <!-- 透明な空白スペーサー -->
           <div class="transparent-box" aria-hidden="true"></div>
 
-          <!-- 透明な空白の「下」に表示される沿線スポット紹介カード -->
-          <article class="spot-card">
-            <span class="spot-icon">📍</span>
+          <!-- 【イベントタブ用】説明カード -->
+          <article class="spot-card" id="spotCardEvent">
+            <span class="spot-icon" id="spotIconEvent">⛵</span>
             <div class="spot-content">
-              <h3 class="spot-title">長部田海床路</h3>
-              <p class="spot-desc">潮の満ち引きで姿を変える、海へ続く道。</p>
+              <h3 class="spot-title" id="spotTitleEvent">三角西港（世界文化遺産）</h3>
+              <p class="spot-desc" id="spotDescEvent">明治日本の産業革命遺産。レトロな洋館と美しい港町散策を楽しめます。</p>
             </div>
           </article>
         </div>
@@ -233,9 +233,9 @@
     <div id="sheetBody" class="sheet-body"></div>
   </section>
 
-  <script src="./mock-data.js?v=42"></script>
-  <script src="./route-geometry.js?v=42"></script>
-  <script src="./timetable-data.js?v=42"></script>
-  <script src="./app.js?v=42"></script>
+  <script src="./mock-data.js?v=43"></script>
+  <script src="./route-geometry.js?v=43"></script>
+  <script src="./timetable-data.js?v=43"></script>
+  <script src="./app.js?v=43"></script>
 </body>
 </html>
