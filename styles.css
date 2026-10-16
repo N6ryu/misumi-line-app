@@ -1,5 +1,20 @@
 *{box-sizing:border-box}:root{--ink:#17364c;--muted:#6c8190;--line:#d8e5ee;--blue:#1479bd;--blue-soft:#eaf5fb;--green:#138c62;--font-scale:1;--head-h:68px;--nav-h:72px}html,body{margin:0;width:100%;height:100%;font-family:"Noto Sans JP","Yu Gothic UI","Meiryo",sans-serif;background:#eef5f9;color:var(--ink)}body{overflow:hidden}button{font:inherit;color:inherit}.app-shell{height:100dvh;display:flex;flex-direction:column;overflow:hidden}.app-header{height:var(--head-h);flex:0 0 var(--head-h);display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff;border-bottom:1px solid var(--line);z-index:10}.brand{display:flex;align-items:center;gap:8px;flex:1;min-width:0}.brand-text-logo{gap:0}.header-text-logo{display:block;height:26px;max-width:100%;width:auto;object-fit:contain}.eyebrow,.kicker{margin:0;font-size:calc(9px*var(--font-scale));font-weight:900;letter-spacing:.08em;color:#67859a}h1{margin:0;font-size:calc(16px*var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.prototype-chip{font-size:10px;font-weight:900;padding:4px 7px;border-radius:999px;background:#edf2f5;color:#6c7e8b}.font-btn{border:0;border-radius:8px;background:#087df3;color:white;font-weight:900;padding:8px;font-size:calc(11px*var(--font-scale));white-space:nowrap}.app-main{flex:1;min-height:0;overflow:hidden;position:relative;}.view{display:none;height:100%}.view.active{display:block}.view-scroll,.station-gate-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 12px 22px}
 
+/* 横スワイプのアニメーション */
+.swipe-exit-left{transform:translateX(-100%);transition:transform .15s ease-in;}
+.swipe-exit-right{transform:translateX(100%);transition:transform .15s ease-in;}
+.swipe-enter-left{transform:translateX(-100%);transition:transform .32s ease-out;}
+.swipe-enter-right{transform:translateX(100%);transition:transform .32s ease-out;}
+.swipe-enter-active{transform:translateX(0);}
+
+/* 透明の箱（下部スクロール余白用スペーサー） */
+.transparent-box {
+  width: 100%;
+  height: 500px; /* 必要に応じて高さを調整してください */
+  background: transparent;
+  pointer-events: none;
+}
+
 /* 背景画像エリアの設定 */
 .gate-fixed-bg {
   position: fixed;
@@ -98,12 +113,12 @@
 .event-date, .event-location { margin: 3px 0; font-size: calc(11px * var(--font-scale)); font-weight: 700; color: #2b5777; }
 .event-desc { margin: 8px 0 0; font-size: calc(11px * var(--font-scale)); color: #556c7d; line-height: 1.5; }
 
-/* 最下部：沿線スポットカード（画像デザインを再現） */
+/* 最下部：沿線スポットカード（透明な箱の直下に表示） */
 .spot-card {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin: 20px 0 calc(var(--nav-h) + 20px + env(safe-area-inset-bottom, 0px));
+  margin: 12px 0 calc(var(--nav-h) + 20px + env(safe-area-inset-bottom, 0px));
   padding: 16px 20px;
   background: rgba(248, 246, 242, 0.92);
   backdrop-filter: blur(12px);
@@ -371,18 +386,3 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
 .station-grid-main .station-pick-btn strong{color:#fff;font-size:calc(16px*var(--font-scale));text-shadow:0 1px 2px rgba(0,48,91,.18);}
 .station-grid-main .station-mark{width:14px;height:14px;background:rgba(255,255,255,.95);border:3px solid rgba(255,255,255,.95);box-shadow:0 0 0 3px rgba(255,255,255,.20);}
 .station-grid-main .station-pick-btn:active{transform:scale(.97);}
-
-/* 横スワイプのアニメーション */
-.swipe-exit-left{transform:translateX(-100%);transition:transform .15s ease-in;}
-.swipe-exit-right{transform:translateX(100%);transition:transform .15s ease-in;}
-.swipe-enter-left{transform:translateX(-100%);transition:transform .32s ease-out;}
-.swipe-enter-right{transform:translateX(100%);transition:transform .32s ease-out;}
-.swipe-enter-active{transform:translateX(0);}
-
-/* 透明の箱（下部スクロール余白用スペーサー） */
-.transparent-box {
-  width: 100%;
-  height: 500px; /* 必要に応じて高さを調整してください */
-  background: transparent;
-  pointer-events: none;
-}
