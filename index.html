@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>三角線 リアルタイムナビ</title>
-  <link rel="stylesheet" href="./styles.css?v=39">
+  <link rel="stylesheet" href="./styles.css?v=40">
 </head>
 <body class="splash-active">
   <div id="splashScreen" class="splash-screen">
@@ -86,7 +86,7 @@
             <!-- リスト表示エリア -->
             <div id="dualRoute" class="dual-route"></div>
 
-            <!-- 地図表示エリア（初期状態は非表示） -->
+            <!-- 地図表示エリア -->
             <div id="mapContainer" class="map-container-shell" hidden>
               <div id="simpleMap" class="simple-map" aria-label="三角線の列車位置地図">
                 <div id="mapTiles" class="map-tiles"></div>
@@ -148,17 +148,17 @@
 
             <article class="event-card">
               <span class="event-tag">特別列車</span>
-              <h3>第41回宇土大太鼓フェスティバルを開催します</h3>
-              <p class="event-date">📅 開催日：令和8年11月21日（土）12時～18時（予定）</p>
-              <p class="event-location">📍 場所：コメリパワー宇土店 駐車場（宇土市善道寺町）</p>
-              <p class="event-desc">当日は、イベント終了後の19時から会場周辺で「うと地蔵まつり花火」が開催されます。たくさんのご来場をお待ちしております。</p>
+              <h3>特急「A列車で行こう」秋の限定運行</h3>
+              <p class="event-date">📅 運行日：土日祝日（好評運行中）</p>
+              <p class="event-location">📍 区間：熊本駅 〜 三角駅</p>
+              <p class="event-desc">ジャズが流れるシックな車内で、ハイボールや天草デコポンジュースを愉しむ上質な旅。</p>
             </article>
 
             <article class="event-card">
               <span class="event-tag">ハイキング</span>
               <h3>JR九州ウォーキング 三角線コース</h3>
               <p class="event-date">📅 開催日：2026年11月8日(日)</p>
-              <p class="event-location">📍 スタート：網田駅（おうだえき）</p>
+              <p class="event-location">📍 スタート：網田駅（あみだえき）</p>
               <p class="event-desc">熊本県最古の木造駅舎「網田駅」から有明海を望む絶景コースを歩くウォーキングイベント。</p>
             </article>
           </div>
@@ -166,7 +166,7 @@
       </section>
     </main>
 
-    <!-- 下部ナビゲーションバー（3つのタブ） -->
+    <!-- 下部ナビゲーションバー -->
     <nav class="bottom-nav" id="bottomNav" hidden>
       <button class="nav-btn active" data-target="0"><span class="nav-icon">🚃</span><span>列車位置</span></button>
       <button class="nav-btn" data-target="1"><span class="nav-icon">◷</span><span>時刻表</span></button>
@@ -197,9 +197,9 @@
     <div id="sheetBody" class="sheet-body"></div>
   </section>
 
-  <script src="./mock-data.js?v=39"></script>
-  <script src="./route-geometry.js?v=39"></script>
-  <script src="./timetable-data.js?v=39"></script>
-  <script src="./app.js?v=39"></script>
+  <script src="./mock-data.js?v=40"></script>
+  <script src="./route-geometry.js?v=40"></script>
+  <script src="./timetable-data.js?v=40"></script>
+  <script src="./app.js?v=40"></script>
 </body>
 </html>
