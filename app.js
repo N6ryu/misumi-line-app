@@ -156,7 +156,7 @@ const routeSide=t=>(t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
 
 function trainChip(t){
   const side=routeSide(t);
-  const icon=side==="up"?"./assets/train-up.gif?v=39":"./assets/train-down.gif?v=39";
+  const icon=side==="up"?"./assets/train-up.gif?v=40":"./assets/train-down.gif?v=40";
   const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
   return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
     <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
@@ -284,20 +284,33 @@ function renderRouteAndMarkers(){
   svg.setAttribute("width",map.clientWidth);
   svg.setAttribute("height",map.clientHeight);
 
+  // SVGグラデーション（路線図の青グラデーションと共通化）
+  const defs = `
+    <defs>
+      <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0b72d9" />
+        <stop offset="52%" stop-color="#2497f1" />
+        <stop offset="100%" stop-color="#58b8f6" />
+      </linearGradient>
+    </defs>
+  `;
+
   const stationSvg=stations.map(s=>{
     const p=mapScreenPoint(s.lat,s.lng);
-    return `<g class="map-station-group ${s.name===selectedStation?"selected":""}">
-      <circle cx="${p.x}" cy="${p.y}" r="9" class="map-station-icon-ring"></circle>
-      <circle cx="${p.x}" cy="${p.y}" r="4.5" class="map-station-icon-core"></circle>
-      <text x="${p.x+11}" y="${p.y-7}" class="map-station-label">${s.name}</text>
+    const isSelected = s.name === selectedStation;
+    return `<g class="map-station-group ${isSelected ? "selected" : ""}" data-station-map="${s.name}">
+      <circle cx="${p.x}" cy="${p.y}" r="${isSelected ? 12 : 9}" class="map-station-icon-ring"></circle>
+      <circle cx="${p.x}" cy="${p.y}" r="${isSelected ? 5.5 : 4.5}" class="map-station-icon-core"></circle>
+      <text x="${p.x + (isSelected ? 14 : 11)}" y="${p.y - 7}" class="map-station-label">${s.name}</text>
     </g>`;
   }).join("");
-  svg.innerHTML=stationSvg;
+
+  svg.innerHTML = defs + stationSvg;
 
   markers.innerHTML=loadedTrains.map(t=>{
     const p=mapScreenPoint(t.latitude,t.longitude);
     const side=routeSide(t);
-    const icon=side==="up"?"./assets/train-up.gif?v=39":"./assets/train-down.gif?v=39";
+    const icon=side==="up"?"./assets/train-up.gif?v=40":"./assets/train-down.gif?v=40";
     const label=t.operationalState==="出発待ち" ? `出発待ち ${t.inferredDeparture||""}`.trim() : t.id;
     return `<button class="simple-train-marker" data-train="${t.id}" style="left:${p.x}px;top:${p.y}px">
       <img src="${icon}" alt="${t.id}">
