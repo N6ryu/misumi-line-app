@@ -362,3 +362,11 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
 .swipe-enter-left{transform:translateX(-100%);transition:transform .32s ease-out;}
 .swipe-enter-right{transform:translateX(100%);transition:transform .32s ease-out;}
 .swipe-enter-active{transform:translateX(0);}
+
+/* 透明の箱（下部スクロール余白用スペーサー） */
+.transparent-box {
+  width: 100%;
+  height: 80px; /* 必要に応じて高さを調整してください */
+  background: transparent;
+  pointer-events: none;
+}
