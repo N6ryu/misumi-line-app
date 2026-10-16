@@ -464,6 +464,7 @@ document.getElementById("fontBtn").addEventListener("click",()=>{
   document.getElementById("fontBtn").textContent=scales[scaleIndex].l;
 });
 
+
 async function init(){
   loadedTrains=await loadTrainData();
   renderStationGrid();
