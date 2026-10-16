@@ -284,7 +284,6 @@ function renderRouteAndMarkers(){
   svg.setAttribute("width",map.clientWidth);
   svg.setAttribute("height",map.clientHeight);
 
-  // SVGグラデーション（路線図の青グラデーションと共通化）
   const defs = `
     <defs>
       <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -463,7 +462,6 @@ document.getElementById("fontBtn").addEventListener("click",()=>{
   document.documentElement.style.setProperty("--font-scale",scales[scaleIndex].s);
   document.getElementById("fontBtn").textContent=scales[scaleIndex].l;
 });
-
 
 async function init(){
   loadedTrains=await loadTrainData();
