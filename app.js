@@ -98,6 +98,7 @@ function showGate(){
   updateDynamicBg("gate");
 }
 
+
 function stationButtonHTML(s){
   return `<button class="station-pick-btn" data-station="${s.name}">
     <span class="station-mark"></span><strong>${s.name}</strong>
