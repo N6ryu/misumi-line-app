@@ -10,7 +10,7 @@
 /* 透明の箱（下部スクロール余白用スペーサー） */
 .transparent-box {
   width: 100%;
-  height: 10px; /* 必要に応じて高さを調整してください */
+  height: 550px; /* 必要に応じて高さを調整してください */
   background: transparent;
   pointer-events: none;
 }
