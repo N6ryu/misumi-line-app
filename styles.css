@@ -43,7 +43,7 @@
   .gate-fixed-bg { max-width: 520px; margin: 0 auto; }
 }
 
-.station-gate { height: 100%; position: relative; z-index: 1; background: transparent !important; }
+.station-gate { background: transparent !important; }
 .station-gate-scroll,.position-bg,.timetable-bg,.event-bg { background: transparent !important; }
 
 /* 表示切替トグルボタン (リスト ↔ 地図) */
