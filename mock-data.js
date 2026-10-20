@@ -55,5 +55,6 @@ function routePositionIndex(t){
 }
 
 async function loadTrainData(){
- return trains.map(t=>({...t,positionIndex:routePositionIndex(t)}));
+ const source = window.MISUMI_LOCAL_SNAPSHOT || trains;
+ return source.map(t=>({...t,positionIndex:routePositionIndex(t)}));
 }
