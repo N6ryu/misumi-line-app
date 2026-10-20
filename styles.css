@@ -262,7 +262,7 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
   r: 12px;
   stroke: #ffffff;
   stroke-width: 3.5px;
-  filter: drop-shadow(0 0 8px rgba(151,151,241,0.7));
+  filter: drop-shadow(0 0 8px rgba(36,151,241,0.7));
 }
 
 .map-station-group.selected circle.map-station-icon-core {
