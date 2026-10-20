@@ -34,7 +34,7 @@
   height: calc(100dvh - var(--head-h) - var(--nav-h) - env(safe-area-inset-bottom, 0px));
 }
 
-.gate-fixed-bg.bg-gate { background: url("./assets/student-misumi-station.png") center bottom / cover no-repeat; }
+.gate-fixed-bg.bg-gate { background: url("./assets/student-misumi-station2.png") center bottom / cover no-repeat; }
 .gate-fixed-bg.bg-position { background: url("./assets/position-bg.png") center bottom / cover no-repeat; }
 .gate-fixed-bg.bg-timetable { background: url("./assets/timetable-bg.png") center bottom / cover no-repeat; }
 .gate-fixed-bg.bg-event { background: url("./assets/map-bg.png") center bottom / cover no-repeat; }
