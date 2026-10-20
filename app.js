@@ -102,10 +102,8 @@ if (toggleListBtn && toggleMapBtn) {
 function updateDynamicBg(viewType) {
   if (!fixedBg) return;
   fixedBg.className = "gate-fixed-bg";
-  if (viewType === "gate") {
+  if (viewType === "gate" || viewType === 0) { // 列車位置（0）も駅選択と同じ bg-gate を適用
     fixedBg.classList.add("bg-gate");
-  } else if (viewType === 0) {
-    fixedBg.classList.add("bg-position");
   } else if (viewType === 1) {
     fixedBg.classList.add("bg-timetable");
   } else if (viewType === 2) {
