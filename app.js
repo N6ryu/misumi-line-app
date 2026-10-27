@@ -198,7 +198,7 @@ const routeSide=t=>(t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
 
 function trainChip(t){
   const side=routeSide(t);
-  const icon=side==="up"?"./assets/student-train-down.gif?v=40":"./assets/student-train-down.gif?v=40";
+  const icon=side==="up"?"./assets/student_train.gif?v=40":"./assets/student_train.gif?v=40";
   const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
   return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
     <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
@@ -351,7 +351,7 @@ function renderRouteAndMarkers(){
   markers.innerHTML=loadedTrains.map(t=>{
     const p=mapScreenPoint(t.latitude,t.longitude);
     const side=routeSide(t);
-    const icon=side==="up"?"./assets/student-train-down.gif?v=40":"./assets/student-train-down.gif?v=40";
+    const icon=side==="up"?"./assets/student_train.gif?v=40":"./assets/student_train.gif?v=40";
     const label=t.operationalState==="出発待ち" ? `出発待ち ${t.inferredDeparture||""}`.trim() : t.id;
     return `<button class="simple-train-marker" data-train="${t.id}" style="left:${p.x}px;top:${p.y}px">
       <img src="${icon}" alt="${t.id}">
