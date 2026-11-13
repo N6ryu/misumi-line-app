@@ -281,7 +281,7 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
 
 .map-note {
   margin: 0;
-  padding: 8px 12px;
+  padding: 8.01px 12px;
   font-size: calc(10px * var(--font-scale));
   color: #4f697a;
   background: rgba(255, 255, 255, 0.92);
