@@ -421,3 +421,22 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
   border-color: #ffffff;
   background: var(--blue);
 }
+/* 駅選択画面からのゆっくり切り替え（ロード画面と同じ1.2sフェード） */
+.station-gate {
+  opacity: 1;
+  transition: opacity 1s ease-out;
+}
+
+.station-gate.gate-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.view.view-arriving {
+  opacity: 0;
+  transition: opacity 1.2s ease-out;
+}
+
+.view.view-arriving.view-arriving-active {
+  opacity: 1;
+}
