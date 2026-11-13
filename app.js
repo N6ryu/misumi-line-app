@@ -1,7 +1,7 @@
 let selectedStation=null,loadedTrains=[],currentView=0;
 let positionDisplayMode = "list"; // "list" または "map"
 let simpleMapState={
-  zoom:10.00001,
+  zoom:10,
   centerLat:32.700,
   centerLng:130.585,
   dragging:false,
@@ -87,6 +87,10 @@ function setPositionDisplayMode(mode) {
     dualRoute.hidden = true;
     routeColumnsHead.style.display = "none";
     mapContainer.hidden = false;
+
+    const scroller = document.getElementById("positionScroller");
+    if (scroller) scroller.scrollTo({ top: 0, behavior: "auto" });
+
     setTimeout(() => {
       resetSimpleMapToRoute();
       renderSimpleMap();
@@ -122,6 +126,8 @@ function setView(i){
   if(currentView===0){
     if(positionDisplayMode==="list" && selectedStation) setTimeout(()=>scrollToSelectedStation(false),80);
     if(positionDisplayMode==="map"){
+      const scroller = document.getElementById("positionScroller");
+      if (scroller) scroller.scrollTo({ top: 0, behavior: "auto" });
       setTimeout(()=>{ resetSimpleMapToRoute(); renderSimpleMap(); },80);
     }
   }
