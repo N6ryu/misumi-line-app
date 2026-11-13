@@ -568,7 +568,7 @@ async function init(){
     if(s){
       s.classList.add("hide");
       document.body.classList.remove("splash-active");
-      setTimeout(()=>s.remove(),1000);
+      setTimeout(()=>s.remove(),350);
     }
   },1400);
 }
