@@ -407,3 +407,17 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
   background: #eaf5fb;
   transform: scale(0.96);
 }
+
+/* 駅選択画面でタップしたボタンを青色にする */
+.station-pick-btn.station-picked {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(20, 121, 189, 0.35);
+  transition: background-color 0.08s ease, color 0.08s ease;
+}
+
+.station-pick-btn.station-picked .station-mark {
+  border-color: #ffffff;
+  background: var(--blue);
+}
