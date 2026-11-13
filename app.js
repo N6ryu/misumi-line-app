@@ -368,11 +368,53 @@ function renderRouteAndMarkers(){
 function renderSimpleMap(){ renderTiles(); renderRouteAndMarkers(); }
 function zoomSimpleMap(delta){ simpleMapState.zoom=Math.max(7,Math.min(15,simpleMapState.zoom+delta)); renderSimpleMap(); }
 
+function getTouchDistance(t1, t2) {
+  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+}
+
 function setupSimpleMapInteraction(){
   const map=document.getElementById("simpleMap");
   if(!map)return;
+
+  let pinchStartDist = 0;
+  let isPinching = false;
+
+  // 二本指（ピンチイン・ピンチアウト）ズーム処理
+  map.addEventListener("touchstart", e => {
+    if (e.touches.length === 2) {
+      isPinching = true;
+      simpleMapState.dragging = false;
+      pinchStartDist = getTouchDistance(e.touches[0], e.touches[1]);
+    }
+  }, { passive: true });
+
+  map.addEventListener("touchmove", e => {
+    if (isPinching && e.touches.length === 2) {
+      e.preventDefault();
+      const currentDist = getTouchDistance(e.touches[0], e.touches[1]);
+      if (pinchStartDist > 0) {
+        const ratio = currentDist / pinchStartDist;
+        if (ratio >= 1.25) {
+          zoomSimpleMap(1);
+          pinchStartDist = currentDist;
+        } else if (ratio <= 0.8) {
+          zoomSimpleMap(-1);
+          pinchStartDist = currentDist;
+        }
+      }
+    }
+  }, { passive: false });
+
+  map.addEventListener("touchend", e => {
+    if (e.touches.length < 2) {
+      isPinching = false;
+      pinchStartDist = 0;
+    }
+  }, { passive: true });
+
+  // 1本指・マウスでのドラッグ移動処理
   map.addEventListener("pointerdown",e=>{
-    if (e.target.closest(".map-controls, button")) return;
+    if (isPinching || e.target.closest(".map-controls, button")) return;
     simpleMapState.dragging=true;
     simpleMapState.startX=e.clientX; simpleMapState.startY=e.clientY;
     simpleMapState.startCenterPx={
@@ -382,7 +424,7 @@ function setupSimpleMapInteraction(){
     map.setPointerCapture(e.pointerId);
   });
   map.addEventListener("pointermove",e=>{
-    if(!simpleMapState.dragging)return;
+    if(!simpleMapState.dragging || isPinching)return;
     const dx=e.clientX-simpleMapState.startX, dy=e.clientY-simpleMapState.startY;
     const cx=simpleMapState.startCenterPx.x-dx, cy=simpleMapState.startCenterPx.y-dy;
     simpleMapState.centerLng=worldXToLon(cx,simpleMapState.zoom);
