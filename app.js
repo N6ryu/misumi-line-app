@@ -140,6 +140,7 @@ navButtons.forEach(b=>b.addEventListener("click",()=>setView(Number(b.dataset.ta
 
 function showGate(){
   views.forEach(v=>v.classList.remove("active"));
+  document.querySelectorAll("#stationGrid .station-picked").forEach(b=>b.classList.remove("station-picked"));
   gate.hidden=false;
   bottomNav.hidden=true;
   stationFab.hidden=true;
@@ -160,8 +161,15 @@ function renderStationGrid(){
   const tt=document.getElementById("ttStationGrid");
   tt.innerHTML=stations.map(stationButtonHTML).join("");
   tt.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>{
-    setTimetableStation(b.dataset.station);
-    closeStationModal();
+    const stationName = b.dataset.station;
+    setTimetableStation(stationName);
+
+    tt.querySelectorAll(".station-picked").forEach(btn=>btn.classList.remove("station-picked"));
+    b.classList.add("station-picked");
+
+    setTimeout(()=>{
+      closeStationModal();
+    },150);
   }));
 }
 
@@ -170,6 +178,7 @@ function selectStation(name){
   setTimetableStation(name);
   renderDualRoute();
 
+  document.querySelectorAll("#stationGrid .station-picked").forEach(b=>b.classList.remove("station-picked"));
   const selectedBtn=document.querySelector(`#stationGrid [data-station="${name}"]`);
   if(selectedBtn) selectedBtn.classList.add("station-picked");
 
@@ -187,7 +196,7 @@ function selectStation(name){
       if(selectedBtn) selectedBtn.classList.remove("station-picked");
       if(positionDisplayMode==="list") scrollToSelectedStation(true);
     },520);
-  },380);
+  },150);
 }
 
 function scrollToSelectedStation(smooth=true){
@@ -496,6 +505,12 @@ function renderTimetable(){
 }
 
 function openStationModal(){
+  const tt=document.getElementById("ttStationGrid");
+  if(tt){
+    tt.querySelectorAll(".station-picked").forEach(btn=>btn.classList.remove("station-picked"));
+    const currentBtn=tt.querySelector(`[data-station="${timetableStation}"]`);
+    if(currentBtn) currentBtn.classList.add("station-picked");
+  }
   stationModal.hidden=false;stationModalBackdrop.hidden=false;
   requestAnimationFrame(()=>{stationModal.classList.add("open");stationModalBackdrop.classList.add("open")});
 }
