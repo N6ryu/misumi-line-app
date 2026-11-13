@@ -568,8 +568,8 @@ async function init(){
     if(s){
       s.classList.add("hide");
       document.body.classList.remove("splash-active");
-      setTimeout(()=>s.remove(),350);
+      setTimeout(()=>s.remove(),1250);
     }
-  },1400);
+  },2800);
 }
 init().catch(console.error);
