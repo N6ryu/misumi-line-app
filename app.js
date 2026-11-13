@@ -102,7 +102,7 @@ if (toggleListBtn && toggleMapBtn) {
 function updateDynamicBg(viewType) {
   if (!fixedBg) return;
   fixedBg.className = "gate-fixed-bg";
-  if (viewType === "gate" || viewType === 0) { // 列車位置（0）も駅選択と同じ bg-gate を適用
+  if (viewType === "gate" || viewType === 0) {
     fixedBg.classList.add("bg-gate");
   } else if (viewType === 1) {
     fixedBg.classList.add("bg-timetable");
@@ -372,6 +372,7 @@ function setupSimpleMapInteraction(){
   const map=document.getElementById("simpleMap");
   if(!map)return;
   map.addEventListener("pointerdown",e=>{
+    if (e.target.closest(".map-controls, button")) return;
     simpleMapState.dragging=true;
     simpleMapState.startX=e.clientX; simpleMapState.startY=e.clientY;
     simpleMapState.startCenterPx={
@@ -392,9 +393,9 @@ function setupSimpleMapInteraction(){
   map.addEventListener("pointercancel",()=>simpleMapState.dragging=false);
   map.addEventListener("wheel",e=>{ e.preventDefault(); zoomSimpleMap(e.deltaY<0?1:-1); },{passive:false});
 
-  document.getElementById("mapZoomIn")?.addEventListener("click",()=>zoomSimpleMap(1));
-  document.getElementById("mapZoomOut")?.addEventListener("click",()=>zoomSimpleMap(-1));
-  document.getElementById("mapReset")?.addEventListener("click",()=>{ resetSimpleMapToRoute(); renderSimpleMap(); });
+  document.getElementById("mapZoomIn")?.addEventListener("click",e=>{ e.stopPropagation(); zoomSimpleMap(1); });
+  document.getElementById("mapZoomOut")?.addEventListener("click",e=>{ e.stopPropagation(); zoomSimpleMap(-1); });
+  document.getElementById("mapReset")?.addEventListener("click",e=>{ e.stopPropagation(); resetSimpleMapToRoute(); renderSimpleMap(); });
 
   window.addEventListener("resize",()=>{
     if(currentView===0 && positionDisplayMode==="map"){ resetSimpleMapToRoute(); renderSimpleMap(); }
