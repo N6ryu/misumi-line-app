@@ -1,7 +1,7 @@
 let selectedStation=null,loadedTrains=[],currentView=0;
 let positionDisplayMode = "list"; // "list" または "map"
 let simpleMapState={
-  zoom:10,
+  zoom:10.00001,
   centerLat:32.700,
   centerLng:130.585,
   dragging:false,
