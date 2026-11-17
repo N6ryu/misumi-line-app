@@ -440,3 +440,63 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
 .view.view-arriving.view-arriving-active {
   opacity: 1;
 }
+
+/* 地図上の駅マーカーをタップ可能にする */
+.map-route-svg {
+  pointer-events: auto;
+}
+.map-station-group {
+  cursor: pointer;
+}
+
+/* 駅周辺情報シート内のスタイル */
+.station-spot-box {
+  background: #f5f9fc;
+  border: 1px solid #dce8ef;
+  border-radius: 14px;
+  padding: 13px 14px;
+  margin-bottom: 12px;
+}
+.station-spot-tag {
+  display: inline-block;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: calc(10px * var(--font-scale));
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+.station-spot-box h3 {
+  margin: 2px 0 6px;
+  font-size: calc(16px * var(--font-scale));
+  color: #17364c;
+}
+.station-spot-box p {
+  margin: 0;
+  font-size: calc(12px * var(--font-scale));
+  line-height: 1.6;
+  color: #466073;
+}
+.station-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.station-action-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 10px;
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 900;
+  cursor: pointer;
+}
+.station-action-btn.primary {
+  background: var(--blue);
+  color: #ffffff;
+}
+.station-action-btn.secondary {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
