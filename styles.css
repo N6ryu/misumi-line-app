@@ -568,3 +568,18 @@ body:has(#stationGate:not([hidden])) .app-main {
     margin: 0 auto;
   }
 }
+
+/* 下部メニューをすべての要素の最前面に固定（ボトムシートやモーダルより手前） */
+.bottom-nav {
+  z-index: 950 !important;
+}
+
+/* 最前面のメニューに中身が隠れないよう、ボトムシート等の下部にメニュー分の余白を確保 */
+.bottom-sheet,
+.station-modal {
+  padding-bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.sheet-body {
+  padding-bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom, 0px)) !important;
+}
