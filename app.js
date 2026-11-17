@@ -280,7 +280,19 @@ function selectStation(name){
 function scrollToSelectedStation(smooth=true){
   if(!selectedStation)return;
   const scroller=document.getElementById("positionScroller");
-  const target=document.querySelector(`.route-node[data-station="${selectedStation}"]`); if(!scroller\vert{}\vert{}!target)return; const sr=scroller.getBoundingClientRect(),tr=target.getBoundingClientRect(); const desired=tr.top-sr.top+scroller.scrollTop-(scroller.clientHeight*.46)+(tr.height/2); scroller.scrollTo({top:Math.max(0,desired),behavior:smooth?"smooth":"auto"}); }  const routeSide=t=>(t.derivedDirection\vert{}\vert{}t.rawDirection)==="上り"?"up":"down";  function trainChip(t){ const side=routeSide(t); const icon=side==="up"?"./assets/student_train.gif?v=40":"./assets/student_train.gif?v=40"; const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
+  const target=document.querySelector(`.route-node[data-station="${selectedStation}"]`);
+  if(!scroller||!target)return;
+  const sr=scroller.getBoundingClientRect(),tr=target.getBoundingClientRect();
+  const desired=tr.top-sr.top+scroller.scrollTop-(scroller.clientHeight*.46)+(tr.height/2);
+  scroller.scrollTo({top:Math.max(0,desired),behavior:smooth?"smooth":"auto"});
+}
+
+const routeSide=t=>(t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
+
+function trainChip(t){
+  const side=routeSide(t);
+  const icon=side==="up"?"./assets/student_train.gif?v=40":"./assets/student_train.gif?v=40";
+  const state=t.operationalState==="出発待ち"?`出発待ち ${t.inferredDeparture||""}`.trim():t.nickname;
   return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
     <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
     <span class="train-chip-copy"><strong>${t.id}</strong><small>${state}</small></span>
@@ -326,7 +338,11 @@ function openStationInfo(name){
   const info = stationAreaInfo[name] || {
     tag: "JR三角線（あまくさみすみ線）",
     spot: `${name}駅周辺エリア`,
-    desc: `${name}駅の周辺情報です。`, access: "JR三角線" };  openSheet(`${name}駅 周辺情報`, `
+    desc: `${name}駅の周辺情報です。`,
+    access: "JR三角線"
+  };
+
+  openSheet(`${name}駅 周辺情報`, `
     <div class="station-spot-box">
       <span class="station-spot-tag">${info.tag}</span>
       <h3>📍 ${info.spot}</h3>
@@ -368,17 +384,18 @@ function openTrainDetail(id){
     return `<div class="schedule-row ${final?"final":""}">
       <span class="schedule-dot"></span>
       <div><strong>${r.station}</strong><small>${isStart?"出発待ち":(final?"終着":"停車駅")}</small></div>
-      <b>${time\vert{}\vert{}"—"}</b><em>${isStart?"発":(final?"着":"発")}</em>
+      <b>${time||"—"}</b><em>${isStart?"発":(final?"着":"発")}</em>
     </div>`;
   }).join("");
-  openSheet(`${t.id}${t.nickname}`,`
+  openSheet(`${t.id} ${t.nickname}`,`
     <div class="train-detail-summary">
       <div><span>現在位置</span><strong>${t.currentStation===t.nextStation?t.currentStation+"駅":t.currentStation+" → "+t.nextStation}</strong></div>
       <div><span>方面</span><strong>${t.displayDirection}</strong></div>
       <div><span>状態</span><strong>${t.operationalState}</strong></div>
     </div>
     <h3 class="sheet-subtitle">ここから終着駅までの予定</h3>
-    <div class="remaining-schedule">${rows}</div>${t.operationalState==="出発待ち"?'<div class="inference-note"><strong>判定：</strong>ビーコン発信から5分以上経過し、三角駅に停車したままのため「上り・出発待ち」と判定しています。</div>':""}
+    <div class="remaining-schedule">${rows}</div>
+    ${t.operationalState==="出発待ち"?'<div class="inference-note"><strong>判定：</strong>ビーコン発信から5分以上経過し、三角駅に停車したままのため「上り・出発待ち」と判定しています。</div>':""}
     <p class="source-note">${t.timetableNote}</p>`);
 }
 
@@ -440,7 +457,7 @@ function renderTiles(){
 function renderRouteAndMarkers(){
   const svg=document.getElementById("mapRouteSvg"), markers=document.getElementById("mapMarkers"), map=document.getElementById("simpleMap");
   if(!svg||!markers||!map)return;
-  svg.setAttribute("viewBox",`0 0 ${map.clientWidth}${map.clientHeight}`);
+  svg.setAttribute("viewBox",`0 0 ${map.clientWidth} ${map.clientHeight}`);
   svg.setAttribute("width",map.clientWidth);
   svg.setAttribute("height",map.clientHeight);
 
@@ -598,8 +615,104 @@ function renderTimetable(){
     .map(([hour,v])=>`
       <div class="hour-row">
         <div class="minute-side up">
-          ${v.up.length ? v.up.map(x=>` <div class="minute-entry" title="${x.label}"> <strong>${x.minute}</strong>${x.label ? `<small>${x.label}</small>` : ""}
+          ${v.up.length ? v.up.map(x=>`
+            <div class="minute-entry" title="${x.label}">
+              <strong>${x.minute}</strong>${x.label ? `<small>${x.label}</small>` : ""}
             </div>`).join("") : '<span class="no-train">—</span>'}
         </div>
         <div class="hour-center">${hour}</div>
-        <div class="
+        <div class="minute-side down">
+          ${v.down.length ? v.down.map(x=>`
+            <div class="minute-entry" title="${x.label}">
+              <strong>${x.minute}</strong>${x.label ? `<small>${x.label}</small>` : ""}
+            </div>`).join("") : '<span class="no-train">—</span>'}
+        </div>
+      </div>`).join("");
+
+  document.getElementById("timetableRows").innerHTML=rows || '<div class="tt-empty">表示できる時刻がありません。</div>';
+}
+
+function openStationModal(){
+  const tt=document.getElementById("ttStationGrid");
+  if(tt){
+    tt.querySelectorAll(".station-picked").forEach(btn=>btn.classList.remove("station-picked"));
+    const currentBtn=tt.querySelector(`[data-station="${timetableStation}"]`);
+    if(currentBtn) currentBtn.classList.add("station-picked");
+  }
+  stationModal.hidden=false;stationModalBackdrop.hidden=false;
+  requestAnimationFrame(()=>{stationModal.classList.add("open");stationModalBackdrop.classList.add("open")});
+}
+function closeStationModal(){
+  stationModal.classList.remove("open");stationModalBackdrop.classList.remove("open");
+  setTimeout(()=>{stationModal.hidden=true;stationModalBackdrop.hidden=true},160);
+}
+document.getElementById("ttStationButton").addEventListener("click",openStationModal);
+document.getElementById("stationModalClose").addEventListener("click",closeStationModal);
+stationModalBackdrop.addEventListener("click",closeStationModal);
+
+let swipeStartX=0,swipeStartY=0,swipeTracking=false;
+function shouldIgnoreSwipe(target){
+  return !!target.closest(".simple-map,.bottom-sheet,.station-modal,button,a,input,select,textarea");
+}
+function setupContentSwipe(){
+  const main=document.querySelector(".app-main");
+  if(!main)return;
+  main.addEventListener("touchstart",e=>{
+    if(gate && !gate.hidden)return;
+    if(e.touches.length!==1 || shouldIgnoreSwipe(e.target)){swipeTracking=false;return;}
+    swipeTracking=true;
+    swipeStartX=e.touches[0].clientX;
+    swipeStartY=e.touches[0].clientY;
+  },{passive:true});
+  main.addEventListener("touchend",e=>{
+    if(!swipeTracking || !e.changedTouches.length)return;
+    swipeTracking=false;
+    const dx=e.changedTouches[0].clientX-swipeStartX;
+    const dy=e.changedTouches[0].clientY-swipeStartY;
+    if(Math.abs(dx)<70 || Math.abs(dx)<Math.abs(dy)*1.25)return;
+    if(dx<0 && currentView<2) animateSwipeTo(currentView+1,"left");
+    if(dx>0 && currentView>0) animateSwipeTo(currentView-1,"right");
+  },{passive:true});
+}
+function animateSwipeTo(next,direction){
+  const current=views[currentView];
+  current.classList.add(direction==="left"?"swipe-exit-left":"swipe-exit-right");
+  setTimeout(()=>{
+    current.classList.remove("swipe-exit-left","swipe-exit-right");
+    setView(next);
+    const incoming=views[next];
+    incoming.classList.add(direction==="left"?"swipe-enter-right":"swipe-enter-left");
+    requestAnimationFrame(()=>incoming.classList.add("swipe-enter-active"));
+    setTimeout(()=>incoming.classList.remove("swipe-enter-right","swipe-enter-left","swipe-enter-active"),320);
+  },150);
+}
+
+stationFab.addEventListener("click",showGate);
+
+const scales=[{s:1,l:"文字：標準"},{s:1.3,l:"文字：大"},{s:.9,l:"文字：小"}];
+let scaleIndex=0;
+document.getElementById("fontBtn").addEventListener("click",()=>{
+  scaleIndex=(scaleIndex+1)%scales.length;
+  document.documentElement.style.setProperty("--font-scale",scales[scaleIndex].s);
+  document.getElementById("fontBtn").textContent=scales[scaleIndex].l;
+});
+
+async function init(){
+  loadedTrains=await loadTrainData();
+  renderStationGrid();
+  renderDualRoute();
+  renderTimetable();
+  updateMenuSpotCards();
+  setupSimpleMapInteraction();
+  setupContentSwipe();
+  updateDynamicBg("gate");
+  setTimeout(()=>{
+    const s=document.getElementById("splashScreen");
+    if(s){
+      s.classList.add("hide");
+      document.body.classList.remove("splash-active");
+      setTimeout(()=>s.remove(),1250);
+    }
+  },2800);
+}
+init().catch(console.error);
