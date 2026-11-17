@@ -87,25 +87,29 @@ const stationAreaInfo = {
   }
 };
 
-/* 各メニューのカード文面を更新する関数 */
+/* 各メニューのカード文面を更新する関数（要素が存在する場合のみ更新） */
 function updateMenuSpotCards() {
+  const setIfExist = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
   const pData = menuSpotData[0];
   if (pData) {
-    document.getElementById("spotIconPosition").textContent = pData.icon;
-    document.getElementById("spotTitlePosition").textContent = pData.title;
-    document.getElementById("spotDescPosition").textContent = pData.desc;
+    setIfExist("spotIconPosition", pData.icon);
+    setIfExist("spotTitlePosition", pData.title);
+    setIfExist("spotDescPosition", pData.desc);
   }
   const tData = menuSpotData[1];
   if (tData) {
-    document.getElementById("spotIconTimetable").textContent = tData.icon;
-    document.getElementById("spotTitleTimetable").textContent = tData.title;
-    document.getElementById("spotDescTimetable").textContent = tData.desc;
+    setIfExist("spotIconTimetable", tData.icon);
+    setIfExist("spotTitleTimetable", tData.title);
+    setIfExist("spotDescTimetable", tData.desc);
   }
   const eData = menuSpotData[2];
   if (eData) {
-    document.getElementById("spotIconEvent").textContent = eData.icon;
-    document.getElementById("spotTitleEvent").textContent = eData.title;
-    document.getElementById("spotDescEvent").textContent = eData.desc;
+    setIfExist("spotIconEvent", eData.icon);
+    setIfExist("spotTitleEvent", eData.title);
+    setIfExist("spotDescEvent", eData.desc);
   }
 }
 
@@ -130,18 +134,18 @@ const mapContainer = document.getElementById("mapContainer");
 function setPositionDisplayMode(mode) {
   positionDisplayMode = mode;
   if (mode === "list") {
-    toggleListBtn.classList.add("active");
-    toggleMapBtn.classList.remove("active");
-    dualRoute.hidden = false;
-    routeColumnsHead.style.display = "grid";
-    mapContainer.hidden = true;
+    toggleListBtn?.classList.add("active");
+    toggleMapBtn?.classList.remove("active");
+    if (dualRoute) dualRoute.hidden = false;
+    if (routeColumnsHead) routeColumnsHead.style.display = "grid";
+    if (mapContainer) mapContainer.hidden = true;
     if (selectedStation) setTimeout(() => scrollToSelectedStation(false), 80);
   } else {
-    toggleMapBtn.classList.add("active");
-    toggleListBtn.classList.remove("active");
-    dualRoute.hidden = true;
-    routeColumnsHead.style.display = "none";
-    mapContainer.hidden = false;
+    toggleMapBtn?.classList.add("active");
+    toggleListBtn?.classList.remove("active");
+    if (dualRoute) dualRoute.hidden = true;
+    if (routeColumnsHead) routeColumnsHead.style.display = "none";
+    if (mapContainer) mapContainer.hidden = false;
 
     const scroller = document.getElementById("positionScroller");
     if (scroller) scroller.scrollTo({ top: 0, behavior: "auto" });
@@ -172,7 +176,7 @@ function updateDynamicBg(viewType) {
 
 function setView(i){
   currentView=Math.max(0,Math.min(2,i));
-  gate.hidden=true;
+  if (gate) gate.hidden=true;
   views.forEach((v,n)=>v.classList.toggle("active",n===currentView));
   navButtons.forEach((b,n)=>b.classList.toggle("active",n===currentView));
   
@@ -196,10 +200,12 @@ navButtons.forEach(b=>b.addEventListener("click",()=>setView(Number(b.dataset.ta
 function showGate(){
   views.forEach(v=>v.classList.remove("active"));
   document.querySelectorAll("#stationGrid .station-picked").forEach(b=>b.classList.remove("station-picked"));
-  gate.classList.remove("gate-leaving");
-  gate.hidden=false;
-  bottomNav.hidden=true;
-  stationFab.hidden=true;
+  if (gate) {
+    gate.classList.remove("gate-leaving");
+    gate.hidden=false;
+  }
+  if (bottomNav) bottomNav.hidden=true;
+  if (stationFab) stationFab.hidden=true;
   updateDynamicBg("gate");
 }
 
@@ -210,23 +216,28 @@ function stationButtonHTML(s){
 }
 
 function renderStationGrid(){
+  if (typeof stations === "undefined") return;
   const e=document.getElementById("stationGrid");
-  e.innerHTML=stations.map(stationButtonHTML).join("");
-  e.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>selectStation(b.dataset.station)));
+  if (e) {
+    e.innerHTML=stations.map(stationButtonHTML).join("");
+    e.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>selectStation(b.dataset.station)));
+  }
 
   const tt=document.getElementById("ttStationGrid");
-  tt.innerHTML=stations.map(stationButtonHTML).join("");
-  tt.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>{
-    const stationName = b.dataset.station;
-    setTimetableStation(stationName);
+  if (tt) {
+    tt.innerHTML=stations.map(stationButtonHTML).join("");
+    tt.querySelectorAll("[data-station]").forEach(b=>b.addEventListener("click",()=>{
+      const stationName = b.dataset.station;
+      setTimetableStation(stationName);
 
-    tt.querySelectorAll(".station-picked").forEach(btn=>btn.classList.remove("station-picked"));
-    b.classList.add("station-picked");
+      tt.querySelectorAll(".station-picked").forEach(btn=>btn.classList.remove("station-picked"));
+      b.classList.add("station-picked");
 
-    setTimeout(()=>{
-      closeStationModal();
-    },150);
-  }));
+      setTimeout(()=>{
+        closeStationModal();
+      },150);
+    }));
+  }
 }
 
 function selectStation(name){
@@ -239,12 +250,12 @@ function selectStation(name){
   const selectedBtn=document.querySelector(`#stationGrid [data-station="${name}"]`);
   if(selectedBtn) selectedBtn.classList.add("station-picked");
 
-  if(gate.hidden) return;
+  if(gate && gate.hidden) return;
 
   // 0.15秒だけ青色のボタンを表示してから、1.2秒かけてゆっくり切り替え
   setTimeout(()=>{
-    bottomNav.hidden=false;
-    stationFab.hidden=false;
+    if (bottomNav) bottomNav.hidden=false;
+    if (stationFab) stationFab.hidden=false;
 
     currentView=0;
     views.forEach((v,n)=>v.classList.toggle("active",n===0));
@@ -252,7 +263,7 @@ function selectStation(name){
     updateDynamicBg(0);
 
     const positionView=document.getElementById("viewPosition");
-    positionView.classList.add("view-arriving");
+    positionView?.classList.add("view-arriving");
 
     if(positionDisplayMode==="list"){
       scrollToSelectedStation(false);
@@ -263,15 +274,17 @@ function selectStation(name){
       renderSimpleMap();
     }
 
-    gate.classList.add("gate-leaving");
+    gate?.classList.add("gate-leaving");
     requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>positionView.classList.add("view-arriving-active"));
+      requestAnimationFrame(()=>positionView?.classList.add("view-arriving-active"));
     });
 
     setTimeout(()=>{
-      gate.hidden=true;
-      gate.classList.remove("gate-leaving");
-      positionView.classList.remove("view-arriving","view-arriving-active");
+      if (gate) {
+        gate.hidden=true;
+        gate.classList.remove("gate-leaving");
+      }
+      positionView?.classList.remove("view-arriving","view-arriving-active");
       if(selectedBtn) selectedBtn.classList.remove("station-picked");
     },1250);
   },150);
@@ -301,6 +314,7 @@ function trainChip(t){
 
 function renderDualRoute(){
   const e=document.getElementById("dualRoute");
+  if (!e || typeof stations === "undefined") return;
   let h="";
   stations.forEach((s,i)=>{
     const at=loadedTrains.filter(t=>{
@@ -321,17 +335,21 @@ function renderDualRoute(){
 }
 
 function openSheet(title,body){
-  document.getElementById("sheetTitle").textContent=title;
-  document.getElementById("sheetBody").innerHTML=body;
+  const titleEl = document.getElementById("sheetTitle");
+  const bodyEl = document.getElementById("sheetBody");
+  if (!titleEl || !bodyEl || !sheet || !backdrop) return;
+  titleEl.textContent=title;
+  bodyEl.innerHTML=body;
   sheet.hidden=false;backdrop.hidden=false;
   requestAnimationFrame(()=>{sheet.classList.add("open");backdrop.classList.add("open")});
 }
 function closeSheet(){
+  if (!sheet || !backdrop) return;
   sheet.classList.remove("open");backdrop.classList.remove("open");
   setTimeout(()=>{sheet.hidden=true;backdrop.hidden=true},180);
 }
-document.getElementById("sheetClose").addEventListener("click",closeSheet);
-backdrop.addEventListener("click",closeSheet);
+document.getElementById("sheetClose")?.addEventListener("click",closeSheet);
+backdrop?.addEventListener("click",closeSheet);
 
 /* 各駅の丸いアイコンを押したときの周辺情報シート */
 function openStationInfo(name){
@@ -407,6 +425,7 @@ function worldXToLon(x,zoom){ return x/(TILE_SIZE*Math.pow(2,zoom))*360-180; }
 function worldYToLat(y,zoom){ const n=Math.PI-2*Math.PI*y/(TILE_SIZE*Math.pow(2,zoom)); return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))); }
 
 function routeBounds(){
+  if (typeof stations === "undefined") return { minLat:32.6, maxLat:32.8, minLng:130.4, maxLng:130.7 };
   const lats=stations.map(s=>s.lat), lngs=stations.map(s=>s.lng);
   return { minLat:Math.min(...lats), maxLat:Math.max(...lats), minLng:Math.min(...lngs), maxLng:Math.max(...lngs) };
 }
@@ -456,7 +475,7 @@ function renderTiles(){
 
 function renderRouteAndMarkers(){
   const svg=document.getElementById("mapRouteSvg"), markers=document.getElementById("mapMarkers"), map=document.getElementById("simpleMap");
-  if(!svg||!markers||!map)return;
+  if(!svg||!markers||!map||typeof stations==="undefined")return;
   svg.setAttribute("viewBox",`0 0 ${map.clientWidth} ${map.clientHeight}`);
   svg.setAttribute("width",map.clientWidth);
   svg.setAttribute("height",map.clientHeight);
@@ -591,10 +610,13 @@ function setupSimpleMapInteraction(){
 let timetableStation="三角";
 function setTimetableStation(name){
   timetableStation=name;
-  document.getElementById("ttStationName").textContent=name;
+  const el = document.getElementById("ttStationName");
+  if (el) el.textContent=name;
   renderTimetable();
 }
 function renderTimetable(){
+  const ttRowsEl = document.getElementById("timetableRows");
+  if (!ttRowsEl) return;
   const data=(typeof timetableData !== 'undefined' && timetableData[timetableStation]) ? timetableData[timetableStation] : {up:[],down:[]};
   const hours={};
   for(let h=5;h<=23;h++) hours[h]={up:[],down:[]};
@@ -629,10 +651,11 @@ function renderTimetable(){
         </div>
       </div>`).join("");
 
-  document.getElementById("timetableRows").innerHTML=rows || '<div class="tt-empty">表示できる時刻がありません。</div>';
+  ttRowsEl.innerHTML=rows || '<div class="tt-empty">表示できる時刻がありません。</div>';
 }
 
 function openStationModal(){
+  if (!stationModal || !stationModalBackdrop) return;
   const tt=document.getElementById("ttStationGrid");
   if(tt){
     tt.querySelectorAll(".station-picked").forEach(btn=>btn.classList.remove("station-picked"));
@@ -643,12 +666,13 @@ function openStationModal(){
   requestAnimationFrame(()=>{stationModal.classList.add("open");stationModalBackdrop.classList.add("open")});
 }
 function closeStationModal(){
+  if (!stationModal || !stationModalBackdrop) return;
   stationModal.classList.remove("open");stationModalBackdrop.classList.remove("open");
   setTimeout(()=>{stationModal.hidden=true;stationModalBackdrop.hidden=true},160);
 }
-document.getElementById("ttStationButton").addEventListener("click",openStationModal);
-document.getElementById("stationModalClose").addEventListener("click",closeStationModal);
-stationModalBackdrop.addEventListener("click",closeStationModal);
+document.getElementById("ttStationButton")?.addEventListener("click",openStationModal);
+document.getElementById("stationModalClose")?.addEventListener("click",closeStationModal);
+stationModalBackdrop?.addEventListener("click",closeStationModal);
 
 let swipeStartX=0,swipeStartY=0,swipeTracking=false;
 function shouldIgnoreSwipe(target){
@@ -687,18 +711,38 @@ function animateSwipeTo(next,direction){
   },150);
 }
 
-stationFab.addEventListener("click",showGate);
+stationFab?.addEventListener("click",showGate);
 
 const scales=[{s:1,l:"文字：標準"},{s:1.3,l:"文字：大"},{s:.9,l:"文字：小"}];
 let scaleIndex=0;
-document.getElementById("fontBtn").addEventListener("click",()=>{
+document.getElementById("fontBtn")?.addEventListener("click",()=>{
   scaleIndex=(scaleIndex+1)%scales.length;
   document.documentElement.style.setProperty("--font-scale",scales[scaleIndex].s);
-  document.getElementById("fontBtn").textContent=scales[scaleIndex].l;
+  const btn = document.getElementById("fontBtn");
+  if (btn) btn.textContent=scales[scaleIndex].l;
 });
 
+function hideSplashScreen() {
+  const s = document.getElementById("splashScreen");
+  if (s) {
+    s.classList.add("hide");
+    document.body.classList.remove("splash-active");
+    setTimeout(() => s.remove(), 1250);
+  }
+}
+
 async function init(){
-  loadedTrains=await loadTrainData();
+  // どんな状況でも2.8秒後に確実にロード画面を消し始める
+  setTimeout(hideSplashScreen, 2800);
+
+  try {
+    if (typeof loadTrainData === "function") {
+      loadedTrains = await loadTrainData();
+    }
+  } catch (err) {
+    console.error("列車データの読み込みに失敗しました:", err);
+  }
+
   renderStationGrid();
   renderDualRoute();
   renderTimetable();
@@ -706,13 +750,5 @@ async function init(){
   setupSimpleMapInteraction();
   setupContentSwipe();
   updateDynamicBg("gate");
-  setTimeout(()=>{
-    const s=document.getElementById("splashScreen");
-    if(s){
-      s.classList.add("hide");
-      document.body.classList.remove("splash-active");
-      setTimeout(()=>s.remove(),1250);
-    }
-  },2800);
 }
 init().catch(console.error);
