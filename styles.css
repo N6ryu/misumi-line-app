@@ -500,3 +500,17 @@ body:has(#stationGate:not([hidden])) .bottom-nav {
   background: var(--blue-soft);
   color: var(--blue);
 }
+
+/* 一番下のメニュー（.bottom-nav）とコンテンツが被らないように下部余白を確保 */
+.view-scroll,
+.station-gate-scroll {
+  padding-bottom: calc(var(--nav-h) + 84px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.spot-card {
+  margin: 12px 0 16px !important;
+}
+
+.station-fab {
+  bottom: calc(var(--nav-h) + 14px + env(safe-area-inset-bottom, 0px)) !important;
+}
