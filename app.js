@@ -29,57 +29,66 @@ const menuSpotData = {
   }
 };
 
-/* 各駅の周辺情報データ（必要に応じて文面を変更してください） */
+/* 各駅の周辺情報データ（image に assets 内の写真パスを指定） */
 const stationAreaInfo = {
   "三角": {
+    image: "./assets/spot-misumi.jpg",
     tag: "終着駅・海辺の港町",
     spot: "三角駅・三角西港・海のピラミッド",
     desc: "海に面した終着駅。駅前すぐの「海のピラミッド」からは天草の海が一望でき、世界文化遺産の「三角西港」へもバスや徒歩でアクセスできます。",
     access: "駅前すぐ三角港フェリー乗り場・バス停あり"
   },
   "波多浦": {
+    image: "./assets/spot-hataura.jpg",
     tag: "海沿いの無人駅",
     spot: "波多浦海岸・三角東港エリア",
     desc: "三角の町並みと海に近い静かな駅。駅から少し歩くと穏やかな入り江が広がり、潮風を感じながら散策できます。",
     access: "三角港・三角市街地まで徒歩圏内"
   },
   "石打ダム": {
+    image: "./assets/spot-ishiuchidam.jpg",
     tag: "自然とダムの駅",
     spot: "石打ダム・石打ダム資料館",
     desc: "緑豊かな山あいに位置する駅。春は桜、初夏は新緑やあじさいが美しく、のんびりとした風景が広がります。",
     access: "石打ダム公園まで徒歩約15分"
   },
   "赤瀬": {
+    image: "./assets/spot-akase.jpg",
     tag: "海と山の絶景駅",
     spot: "赤瀬海水浴場・御輿来海岸方面",
     desc: "山と海に挟まれた小さな駅。すぐそばに海が迫り、天気が良い日は有明海越しに雲仙普賢岳を望めます。",
     access: "赤瀬海岸まで徒歩すぐ"
   },
   "網田": {
+    image: "./assets/spot-oda.jpg",
     tag: "県内最古の木造駅舎",
     spot: "網田駅舎（登録有形文化財）・御輿来海岸",
     desc: "明治32年建築の熊本県内最古の木造駅舎が残るレトロな駅。日本の渚百選「御輿来（おこしき）海岸」の干潟絶景への最寄り駅です。",
     access: "御輿来海岸展望所まで車で約5分（徒歩約25分）"
   },
   "肥後長浜": {
+    image: "./assets/spot-higonagahama.jpg",
     tag: "有明海沿いの駅",
     spot: "長浜海岸・国道57号沿線",
     desc: "ホームから有明海を間近に望める海辺の駅。夕暮れ時には海面に沈む美しい夕日を見ることができます。",
     access: "海沿いの散策やサイクリングの拠点"
   },
   "住吉": {
+    image: "./assets/spot-sumiyoshi.jpg",
     tag: "長部田海床路の最寄り駅",
     spot: "長部田海床路・住吉自然公園",
     desc: "海の中に電柱が立ち並ぶ絶景スポット「長部田海床路（ながべたかいしょうろ）」の最寄り駅。初夏には住吉自然公園のあじさいも見頃を迎えます。",
     access: "長部田海床路まで徒歩約15〜20分"
   },
   "緑川": {
+    image: "./assets/spot-midorikawa.jpg",
     tag: "緑川河口ののどかな駅",
     spot: "緑川河口・田園エリア",
     desc: "一級河川・緑川の近くにある落ち着いた住宅・田園エリアの駅。広々とした空と田畑の風景が続きます。",
     access: "緑川堤防沿いの散策ルート近く"
   },
   "宇土": {
+    image: "./assets/spot-uto.jpg",
     tag: "鹿児島本線との接続駅",
     spot: "宇土シティモール・宇土市街地",
     desc: "JR鹿児島本線と三角線が分岐する交通の要所。駅周辺には商業施設や飲食店が揃い、熊本駅方面への乗り換えもスムーズです。",
@@ -87,7 +96,7 @@ const stationAreaInfo = {
   }
 };
 
-/* 各メニューのカード文面を更新する関数（要素が存在する場合のみ更新） */
+/* 各メニューのカード文面を更新する関数 */
 function updateMenuSpotCards() {
   const setIfExist = (id, text) => {
     const el = document.getElementById(id);
@@ -351,16 +360,24 @@ function closeSheet(){
 document.getElementById("sheetClose")?.addEventListener("click",closeSheet);
 backdrop?.addEventListener("click",closeSheet);
 
-/* 各駅の丸いアイコンを押したときの周辺情報シート */
+/* 各駅の丸いアイコンを押したときの周辺情報シート（一番上に風景写真） */
 function openStationInfo(name){
   const info = stationAreaInfo[name] || {
+    image: "",
     tag: "JR三角線（あまくさみすみ線）",
     spot: `${name}駅周辺エリア`,
     desc: `${name}駅の周辺情報です。`,
     access: "JR三角線"
   };
 
+  const photoHtml = info.image ? `
+    <div class="station-spot-photo-wrap">
+      <img class="station-spot-photo" src="${info.image}" alt="${name}駅周辺の風景" onerror="this.parentElement.style.display='none'">
+    </div>
+  ` : "";
+
   openSheet(`${name}駅 周辺情報`, `
+    ${photoHtml}
     <div class="station-spot-box">
       <span class="station-spot-tag">${info.tag}</span>
       <h3>📍 ${info.spot}</h3>
@@ -732,7 +749,6 @@ function hideSplashScreen() {
 }
 
 async function init(){
-  // どんな状況でも2.8秒後に確実にロード画面を消し始める
   setTimeout(hideSplashScreen, 2800);
 
   try {
