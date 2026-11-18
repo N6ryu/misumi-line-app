@@ -39,8 +39,8 @@
             <div class="operation-dot"></div>
             <div>
               <span class="kicker">OPERATION STATUS</span>
-              <strong id="liveStatus" role="status">仮データ連携：受信待ち</strong>
-              <p>Firestore連携試験用の仮データです。実際の運行状況・遅延情報ではありません。</p>
+              <strong id="liveStatus" role="status">列車情報：受信待ち</strong>
+              <p>列車位置情報の試験提供です。時刻は所定時刻で、遅延・到着予測ではありません。</p>
             </div>
           </section>
 
@@ -61,7 +61,7 @@
             <div class="route-sticky-head">
               <div class="section-heading">
                 <div><span class="kicker">TRAIN POSITION</span><h2>現在の列車位置</h2></div>
-                <span class="sample-badge" id="liveBadge" role="status">仮データ・未接続</span>
+                <span class="sample-badge" id="liveBadge" role="status">列車情報・未接続</span>
               </div>
 
               <!-- 上部の表示切替スイッチ（リスト ↔ 地図） -->
@@ -237,6 +237,6 @@
   <script src="./route-geometry.js?v=43"></script>
   <script src="./timetable-data.js?v=43"></script>
   <script src="./app.js?v=44"></script>
-  <script type="module" src="./firebase-live.js?v=2"></script>
+  <script type="module" src="./firebase-live.js?v=3"></script>
 </body>
 </html>
