@@ -56,6 +56,6 @@ onSnapshot(doc(db,'publicLive','latest'), {includeMetadataChanges:true}, snap =>
     clearTimeout(timer);
     const rows = (Array.isArray(data.trains)?data.trains:[]).map(convert).filter(Boolean);
     redraw(rows);
-    status('列車情報 '+new Date(time).toLocaleTimeString('ja-JP')+' / '+(Number.isInteger(data.updateCount)?data.updateCount:'?')+'回');
+    status(new Date(time).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit', hour12:false}) + '現在');
     timer = setTimeout(()=>clear('列車情報・更新停止'),remaining);
   }, e => clear('受信エラー：'+e.code));
