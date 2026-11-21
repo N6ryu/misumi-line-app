@@ -43,15 +43,61 @@ const trains=[
 
 function stationIndex(name){return stations.findIndex(s=>s.name===name)}
 
+// 実測座標を線路形状の折れ線に投影し、路線図の表示位置を求める。
+// 直線的な駅間補間と異なり、曲線区間でも進行率を計算できる。
+function projectOnRoute(t) {
+ const a=stationIndex(t.currentStation), b=stationIndex(t.nextStation);
+ if (a<0 || !Number.isFinite(t.latitude) || !Number.isFinite(t.longitude)) return null;
+ if (b<0 || a===b) {
+   const st=stations[a];
+   const dLat=(t.latitude-st.lat)*111320;
+   const dLng=(t.longitude-st.lng)*111320*Math.cos(t.latitude*Math.PI/180);
+   return {index:a,latitude:st.lat,longitude:st.lng,offsetMeters:Math.hypot(dLat,dLng),progress:0};
+ }
+ const lo=Math.min(a,b), hi=Math.max(a,b);
+ const geom=typeof lightweightRouteSegments!=="undefined"
+   ? lightweightRouteSegments.find(s=>s.from===stations[lo].name && s.to===stations[hi].name)
+   : null;
+ const points=geom?.points || [
+   [stations[lo].lat,stations[lo].lng],
+   [stations[hi].lat,stations[hi].lng]
+ ];
+ if(points.length<2) return null;
+ const latScale=111320;
+ const lonScale=latScale*Math.cos(t.latitude*Math.PI/180);
+ const xy=([lat,lng])=>[lng*lonScale,lat*latScale];
+ const [px,py]=xy([t.latitude,t.longitude]);
+ let total=0,bestDistance2=Infinity,bestAlong=0,bestPoint=null;
+ const segments=[];
+ for(let i=0;i<points.length-1;i++){
+   const [x1,y1]=xy(points[i]),[x2,y2]=xy(points[i+1]);
+   const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy);
+   segments.push({x1,y1,dx,dy,len,along:total});
+   total+=len;
+ }
+ for(const seg of segments){
+   const q=seg.len>0?Math.max(0,Math.min(1,
+     ((px-seg.x1)*seg.dx+(py-seg.y1)*seg.dy)/(seg.len*seg.len))):0;
+   const x=seg.x1+seg.dx*q,y=seg.y1+seg.dy*q;
+   const d2=(px-x)**2+(py-y)**2;
+   if(d2<bestDistance2){
+     bestDistance2=d2;
+     bestAlong=seg.along+seg.len*q;
+     bestPoint={latitude:y/latScale,longitude:x/lonScale};
+   }
+ }
+ const fromLow=total>0?bestAlong/total:0;
+ const progress=a<b?fromLow:1-fromLow;
+ return {
+   index:a+(b-a)*progress,
+   latitude:bestPoint.latitude,
+   longitude:bestPoint.longitude,
+   offsetMeters:Math.sqrt(bestDistance2),
+   progress
+ };
+}
 function routePositionIndex(t){
- const a=stationIndex(t.currentStation),b=stationIndex(t.nextStation);
- if(a<0)return 0;
- if(b<0||a===b)return a;
- const A=stations[a],B=stations[b],c=Math.cos(((A.lat+B.lat)/2)*Math.PI/180);
- const ax=A.lng*c,ay=A.lat,bx=B.lng*c,by=B.lat,px=t.longitude*c,py=t.latitude;
- const dx=bx-ax,dy=by-ay,d=dx*dx+dy*dy;
- const q=d?Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/d)):0;
- return a+(b-a)*q;
+ return projectOnRoute(t)?.index ?? 0;
 }
 
 async function loadTrainData(){

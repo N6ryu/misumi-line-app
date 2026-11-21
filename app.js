@@ -427,6 +427,12 @@ function openTrainDetail(id){
       <div><span>現在位置</span><strong>${t.currentStation===t.nextStation?t.currentStation+"駅":t.currentStation+" → "+t.nextStation}</strong></div>
       <div><span>方面</span><strong>${t.displayDirection}</strong></div>
       <div><span>状態</span><strong>${t.operationalState}</strong></div>
+      <div><span>次駅</span><strong>${t.etaStation||"未判定"}</strong></div>
+      <div><span>次駅到着まで</span><strong>${t.etaLabel||"予測できません"}</strong></div>
+      <div><span>到着予測</span><strong>${t.predictedArrival||"—"}</strong></div>
+      <div><span>運行状況</span><strong>${t.delayLabel||"判定保留"}</strong></div>
+      ${["missed","departure-missed","estimated"].includes(t.delayKind) && Number.isFinite(t.delayMinutes) ? `<div><span>遅れの目安</span><strong>${t.delayKind==="estimated"?"約":""}${t.delayMinutes}分${t.delayKind==="estimated"?"（推定）":"以上"}</strong></div>` : ""}
+      <div><span>位置の測位時刻</span><strong>${t.measureTimeLabel||"未取得"}</strong></div>
     </div>
     <h3 class="sheet-subtitle">ここから終着駅までの予定</h3>
     <div class="remaining-schedule">${rows}</div>
@@ -531,7 +537,7 @@ function renderRouteAndMarkers(){
     const p=mapScreenPoint(t.latitude,t.longitude);
     const side=routeSide(t);
     const icon=side==="up"?"./assets/student_train.gif?v=40":"./assets/student_train.gif?v=40";
-    const label=t.operationalState==="出発待ち" ? `出発待ち ${t.inferredDeparture||""}`.trim() : t.id;
+    const label=t.id+((t.delayKind==="estimated"||t.delayKind==="missed") ? ` ${t.delayLabel}` : (t.etaLabel&&t.etaLabel!=="予測できません"?` ${t.etaLabel}`:""));
     return `<button class="simple-train-marker" data-train="${t.id}" style="left:${p.x}px;top:${p.y}px">
       <img src="${icon}" alt="${t.id}">
       <span>${label}</span>
