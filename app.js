@@ -410,35 +410,70 @@ function openStationInfo(name){
   });
 }
 
+
 function openTrainDetail(id){
-  const t=loadedTrains.find(x=>x.id===id);if(!t)return;
+  const t=loadedTrains.find(x=>x.id===id);
+  if(!t)return;
+
   const rows=t.timetable.map((r,i)=>{
     const isStart=i===0&&t.operationalState==="出発待ち";
     const final=i===t.timetable.length-1&&!isStart;
-    const time=isStart?(r.departure||r.arrival):(final?(r.arrival||r.departure):(r.departure||r.arrival));
+
+    const time=isStart
+      ?(r.departure||r.arrival)
+      :(final
+        ?(r.arrival||r.departure)
+        :(r.departure||r.arrival));
+
     return `<div class="schedule-row ${final?"final":""}">
       <span class="schedule-dot"></span>
-      <div><strong>${r.station}</strong><small>${isStart?"出発待ち":(final?"終着":"停車駅")}</small></div>
-      <b>${time||"—"}</b><em>${isStart?"発":(final?"着":"発")}</em>
+      <div>
+        <strong>${r.station}</strong>
+        <small>${isStart?"出発待ち":(final?"終着":"停車駅")}</small>
+      </div>
+      <b>${time||"—"}</b>
+      <em>${isStart?"発":(final?"着":"発")}</em>
     </div>`;
   }).join("");
+
+  const delayText=t.delayLabel==="遅延"
+    ? `遅延${Number.isFinite(t.delayMinutes)
+        ? `（${t.delayKind==="estimated"?"約":""}${t.delayMinutes}分${t.delayKind==="estimated"?"":"以上"}）`
+        : ""}`
+    : (t.delayLabel||"判定保留");
+
   openSheet(`${t.id} ${t.nickname}`,`
     <div class="train-detail-summary">
-      <div><span>現在位置</span><strong>${t.currentStation===t.nextStation?t.currentStation+"駅":t.currentStation+" → "+t.nextStation}</strong></div>
-      <div><span>方面</span><strong>${t.displayDirection}</strong></div>
-      <div><span>状態</span><strong>${t.operationalState}</strong></div>
-      <div><span>次駅</span><strong>${t.etaStation||"未判定"}</strong></div>
-      <div><span>次駅到着まで</span><strong>${t.etaLabel||"予測できません"}</strong></div>
-      <div><span>到着予測</span><strong>${t.predictedArrival||"—"}</strong></div>
-      <div><span>運行状況</span><strong>${t.delayLabel||"判定保留"}</strong></div>
-      ${["missed","departure-missed","estimated"].includes(t.delayKind) && Number.isFinite(t.delayMinutes) ? `<div><span>遅れの目安</span><strong>${t.delayKind==="estimated"?"約":""}${t.delayMinutes}分${t.delayKind==="estimated"?"（推定）":"以上"}</strong></div>` : ""}
-      <div><span>位置の測位時刻</span><strong>${t.measureTimeLabel||"未取得"}</strong></div>
+      <div>
+        <span>現在位置</span>
+        <strong>${t.currentStation===t.nextStation
+          ?t.currentStation+"駅"
+          :t.currentStation+" → "+t.nextStation}</strong>
+      </div>
+      <div>
+        <span>方面</span>
+        <strong>${t.displayDirection}</strong>
+      </div>
+      <div>
+        <span>運行状況</span>
+        <strong>${delayText}</strong>
+      </div>
+      <div>
+        <span>次駅到着まで</span>
+        <strong>${t.etaLabel||"予測できません"}</strong>
+      </div>
     </div>
-    <h3 class="sheet-subtitle">ここから終着駅までの予定</h3>
-    <div class="remaining-schedule">${rows}</div>
-    ${t.operationalState==="出発待ち"?'<div class="inference-note"><strong>判定：</strong>ビーコン発信から5分以上経過し、三角駅に停車したままのため「上り・出発待ち」と判定しています。</div>':""}
-    <p class="source-note">${t.timetableNote}</p>`);
+
+    <h3 class="sheet-subtitle">
+      ここから終着駅までの予定
+    </h3>
+    <div class="remaining-schedule">
+      ${rows}
+    </div>
+    <p class="source-note">${t.timetableNote}</p>
+  `);
 }
+
 
 // Simple Map
 const TILE_SIZE=256;
