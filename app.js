@@ -145,6 +145,7 @@ function setPositionDisplayMode(mode) {
     toggleListBtn?.classList.add("active");
     toggleMapBtn?.classList.remove("active");
     if(dualRoute)dualRoute.hidden=false;
+    requestAnimationFrame(()=>renderDualRoute());
     if(routeColumnsHead)routeColumnsHead.style.display="grid";
     if(mapContainer)mapContainer.hidden=true;
     if(selectedStation)setTimeout(()=>scrollToSelectedStation(false),80);
@@ -281,6 +282,7 @@ function selectStation(name){
 
     currentView=0;
     views.forEach((v,n)=>v.classList.toggle("active",n===0));
+    requestAnimationFrame(()=>renderDualRoute());
     navButtons.forEach((b,n)=>b.classList.toggle("active",n===0));
     updateDynamicBg(0);
 
@@ -336,12 +338,33 @@ function scrollToSelectedStation(smooth=true){
 const routeSide=t=>
   (t.derivedDirection||t.rawDirection)==="上り"?"up":"down";
 
+// 位置情報による駅停車判定：明示的な停車を優先し、推定は狭い範囲だけに限定する。
+function getTrainStopInfo(t){
+  const explicit=t.operationalState==='停車中' || t.operationalState==='出発待ち' || t.currentStation===t.nextStation;
+  if(explicit && stations.some(s=>s.name===t.currentStation)){
+    return {station:t.currentStation,inferred:false};
+  }
+  // 走行中でETAが求まる列車は、駅を通過中の可能性があるため止めない。
+  if(t.etaLabel && t.etaLabel!=='予測できません') return null;
+  const lat=Number.isFinite(t.rawLatitude)?t.rawLatitude:t.latitude;
+  const lng=Number.isFinite(t.rawLongitude)?t.rawLongitude:t.longitude;
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
+  const candidates=stations.filter(s=>s.name===t.currentStation||s.name===t.nextStation);
+  let best=null,minimum=Infinity;
+  for(const s of candidates){
+    const dy=(lat-s.lat)*111320;
+    const dx=(lng-s.lng)*111320*Math.cos(lat*Math.PI/180);
+    const distance=Math.hypot(dx,dy);
+    if(distance<minimum){minimum=distance;best=s;}
+  }
+  return best && minimum<=50?{station:best.name,inferred:true}:null;
+}
+
 function trainChip(t){
   const side=routeSide(t);
   const icon="./assets/student_train.gif?v=40";
-  const state=t.operationalState==="出発待ち"
-    ?`出発待ち ${t.inferredDeparture||""}`.trim()
-    :t.nickname;
+  const stopInfo=getTrainStopInfo(t);
+  const state=stopInfo?(stopInfo.inferred?'停車中（推定）':'停車中'):(t.operationalState==='出発待ち'?`出発待ち ${t.inferredDeparture||''}`.trim():t.nickname);
 
   return `<button class="track-train ${side} ${t.operationalState==="出発待ち"?"waiting":""}" data-train="${t.id}">
     <img class="train-gif" src="${icon}" alt="${side==="up"?"上り":"下り"}列車">
@@ -352,40 +375,51 @@ function trainChip(t){
 }
 
 function renderDualRoute(){
-  const e=document.getElementById("dualRoute");
-  if(!e||typeof stations==="undefined")return;
-  let h="";
-
+  const e=document.getElementById('dualRoute');
+  if(!e||typeof stations==='undefined')return;
+  let h='';
   stations.forEach((s,i)=>{
     const at=loadedTrains.filter(t=>{
-      if(t.currentStation===t.nextStation){
-        return t.currentStation===s.name;
-      }
-      return t.positionIndex>=i&&t.positionIndex<i+1;
+      if(t.currentStation===t.nextStation)return t.currentStation===s.name;
+      return Number.isFinite(t.positionIndex)&&t.positionIndex>=i&&t.positionIndex<i+1;
     });
-
-    const left=at.filter(t=>routeSide(t)==="up");
-    const right=at.filter(t=>routeSide(t)==="down");
-
-    h+=`<div class="route-node ${s.name===selectedStation?"selected":""}" data-station="${s.name}">
-      <div class="side left">${left.map(trainChip).join("")}</div>
-      <button class="center-station" data-station-button="${s.name}">
-        <i></i><strong>${s.name}</strong>
-      </button>
-      <div class="side right">${right.map(trainChip).join("")}</div>
+    const left=at.filter(t=>routeSide(t)==='up');
+    const right=at.filter(t=>routeSide(t)==='down');
+    h+=`<div class="route-node ${s.name===selectedStation?'selected':''}" data-station="${s.name}">
+      <div class="side left">${left.map(trainChip).join('')}</div>
+      <button class="center-station" data-station-button="${s.name}"><i></i><strong>${s.name}</strong></button>
+      <div class="side right">${right.map(trainChip).join('')}</div>
     </div>`;
   });
-
   e.innerHTML=h;
-
-  e.querySelectorAll("[data-train]").forEach(b=>
-    b.addEventListener("click",()=>openTrainDetail(b.dataset.train))
-  );
-
-  e.querySelectorAll("[data-station-button]").forEach(b=>
-    b.addEventListener("click",
-      ()=>openStationInfo(b.dataset.stationButton))
-  );
+  e.querySelectorAll('[data-train]').forEach(b=>b.addEventListener('click',()=>openTrainDetail(b.dataset.train)));
+  e.querySelectorAll('[data-station-button]').forEach(b=>b.addEventListener('click',()=>openStationInfo(b.dataset.stationButton)));
+  // 駅間の進行率に応じて、カードをその駅間の正しい高さへ移動する。
+  const nodes=[...e.querySelectorAll('.route-node')];
+  const centerY=index=>{
+    const el=nodes[index]?.querySelector('.center-station i');
+    if(!el)return null;
+    const r=el.getBoundingClientRect();
+    return (r.top+r.bottom)/2;
+  };
+  e.querySelectorAll('.track-train').forEach(button=>{
+    const t=loadedTrains.find(x=>x.id===button.dataset.train);
+    if(!t)return;
+    const stop=getTrainStopInfo(t);
+    const pos=stop?stations.findIndex(s=>s.name===stop.station):t.positionIndex;
+    if(!Number.isFinite(pos)||pos<0)return;
+    const p=Math.max(0,Math.min(stations.length-1,pos));
+    const a=Math.floor(p),b=Math.min(a+1,stations.length-1);
+    const y1=centerY(a),y2=centerY(b);
+    if(y1===null||y2===null)return;
+    const target=y1+(y2-y1)*(p-a);
+    const rect=button.getBoundingClientRect();
+    if(rect.height===0)return;
+    const current=(rect.top+rect.bottom)/2;
+    button.style.position='relative';
+    button.style.zIndex='3';
+    button.style.transform=`translateY(${Math.round(target-current)}px)`;
+  });
 }
 
 function openSheet(title,body){
@@ -514,6 +548,13 @@ function openTrainDetail(id){
 
   const title=`${t.id} ${t.displayDirection}（${t.rawDirection}）`;
 
+  const stopInfo=getTrainStopInfo(t);
+  const operationText=stopInfo
+    ? (t.delayLabel==='遅延'?`停車中（${delayText}）`:(stopInfo.inferred?'停車中（推定）':'停車中'))
+    : delayText;
+  const etaText=stopInfo && (!t.etaLabel || t.etaLabel==='予測できません')
+    ? '発車待ち' : (t.etaLabel||'予測できません');
+
   openSheet(title,`
     <div class="train-detail-summary">
       <div>
@@ -524,11 +565,11 @@ function openTrainDetail(id){
       </div>
       <div>
         <span>運行状況</span>
-        <strong>${delayText}</strong>
+        <strong>${operationText}</strong>
       </div>
       <div>
         <span>次駅到着まで</span>
-        <strong>${t.etaLabel||"予測できません"}</strong>
+        <strong>${etaText}</strong>
       </div>
     </div>
     <h3 class="sheet-subtitle">ここから終着駅までの予定</h3>
@@ -653,6 +694,8 @@ function renderTiles(){
 
 /* 地図上に列車番号・次駅・到着予測を表示 */
 function buildMapEtaLabel(t){
+  const stop=getTrainStopInfo(t);
+  if(stop) return t.id+' '+stop.station+'駅 '+(stop.inferred?'停車中（推定）':'停車中');
   const station=
     (typeof t.etaStation==="string"&&t.etaStation)
       ?t.etaStation
