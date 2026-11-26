@@ -4,7 +4,7 @@ import { getFirestore, doc, onSnapshot } from 'https://www.gstatic.com/firebasej
 // 学校側のFirebase Webアプリ設定。JR九州側の鍵や認証情報は入れない。
 // 現在のリポジトリと同様、学校側Web APIキーはGitHub上で設定する。
 const app = initializeApp({
-  apiKey: 'YOUR_API_KEY',
+  apiKey: 'AIzaSyAohrIJyQ2xbwmu2nrpXgNxf11vdy0IZ8g',
   authDomain: 'jrtest-c7e49.firebaseapp.com',
   projectId: 'jrtest-c7e49',
   appId: '1:141244589484:web:cb0e829f08e6cff6c84609',
